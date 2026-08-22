@@ -26,7 +26,7 @@ import { InquiryModal } from './components/common/InquiryModal';
 const MainContent = () => {
   const { currentScreen, isAuthenticated } = useTripContext();
   const [isInquiryOpen, setIsInquiryOpen] = React.useState(false);
-
+//scrolling
   // Scroll to the top of the page on every screen/page transition
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
