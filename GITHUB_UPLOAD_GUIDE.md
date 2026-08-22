@@ -10,22 +10,17 @@ This project is configured with 3 separate git branches for 3 team members to up
 
 ---
 
-## ⚡ Step 1: Connect Project to GitHub Repository (One-Time Setup)
+## ⚡ Step 1: Remote Repository Connected
 
-The repository creator (or Team Leader) should create a new repository on GitHub and link it to this local project:
+Your remote repository URL is configured as:
+`https://github.com/24bt04096-commits/odoo-hackathon-2026.git`
 
-1. Open your terminal in this project directory: `c:\Users\Krina Gothi\Desktop\hackathon`
-2. Run the following command (replace `<YOUR_GITHUB_REPO_URL>` with your repository link):
-
-```bash
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-```
-
-3. Push all initial branches (`main`, `frontend`, `backend`, `features`) to GitHub:
+To push all 4 branches (`main`, `frontend`, `backend`, `features`) to GitHub, run:
 
 ```bash
 git push -u origin --all
 ```
+
 
 ---
 
