@@ -46,11 +46,23 @@ export const TripProvider = ({ children }) => {
   useEffect(() => {
     const fetchBackendData = async () => {
       try {
+        let loadedFromSupabase = false;
         // Fetch trips from Supabase if table exists
         const { data: supabaseTrips, error: sErr } = await supabase.from('trips').select('*');
         if (!sErr && supabaseTrips && supabaseTrips.length > 0) {
-          setTrips(supabaseTrips);
-          console.log('✅ Loaded trips from Supabase database');
+          const normalized = supabaseTrips.map(t => ({
+            ...t,
+            startDate: t.startDate || t.start_date || '2026-11-01',
+            endDate: t.endDate || t.end_date || '2026-11-10',
+            totalDays: t.totalDays || t.total_days || 5,
+            coverImage: t.coverImage || t.cover_image || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80',
+            totalBudget: t.totalBudget || t.total_budget || 2500,
+            spentBudget: t.spentBudget || t.spent_budget || 0,
+            cities: Array.isArray(t.cities) ? t.cities : (typeof t.cities === 'string' ? JSON.parse(t.cities) : [])
+          }));
+          setTrips(normalized);
+          loadedFromSupabase = true;
+          console.log('✅ Loaded trips from Supabase database:', normalized.length);
         }
 
         const [tripsRes, destRes, actRes, adminRes] = await Promise.all([
@@ -60,7 +72,7 @@ export const TripProvider = ({ children }) => {
           fetch(`${API_BASE_URL}/admin/metrics`)
         ]);
 
-        if (tripsRes.ok && (!supabaseTrips || supabaseTrips.length === 0)) {
+        if (tripsRes.ok && !loadedFromSupabase) {
           const tripsData = await tripsRes.json();
           if (tripsData.trips && tripsData.trips.length > 0) setTrips(tripsData.trips);
         }
@@ -303,56 +315,6 @@ export const TripProvider = ({ children }) => {
 
   // Trip API Operations
   const createTrip = async (newTripData) => {
-    // Attempt inserting into Supabase trips table
-    try {
-      const tripId = `trip-${Date.now()}`;
-      const formattedTrip = {
-        id: tripId,
-        title: newTripData.title || "New Adventure",
-        subtitle: newTripData.subtitle || "Custom multi-city journey",
-        status: "upcoming",
-        startDate: newTripData.startDate || "2026-11-01",
-        endDate: newTripData.endDate || "2026-11-10",
-        totalDays: Number(newTripData.totalDays) || 10,
-        coverImage: newTripData.coverImage || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80",
-        totalBudget: Number(newTripData.totalBudget) || 2500,
-        spentBudget: 0,
-        currency: user?.currency || "USD",
-        travelers: [
-          { name: user?.name || "Traveler", avatar: user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80", role: "Owner" }
-        ],
-        cities: newTripData.cities || [
-          { id: "dest-tokyo", name: "Tokyo", daysCount: 5, order: 1, hotel: "Selected Hotel", dates: "Day 1 - Day 5" }
-        ]
-      };
-
-      const { data: sTrip, error: sErr } = await supabase.from('trips').insert([formattedTrip]).select();
-      if (!sErr && sTrip && sTrip.length > 0) {
-        console.log('✅ Created trip in Supabase database:', sTrip[0]);
-      }
-    } catch (sErr) {
-      console.warn('Supabase createTrip notice:', sErr.message);
-    }
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/trips`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tripData: newTripData, user })
-      });
-      const data = await res.json();
-      if (data.trip) {
-        setTrips((prev) => [data.trip, ...prev]);
-        setActiveTripId(data.trip.id);
-        addToast(`Successfully created "${data.trip.title}"!`, 'success');
-        setCurrentScreen('itinerary-builder');
-        return;
-      }
-    } catch (e) {
-      console.warn("Using fallback local createTrip:", e.message);
-    }
-
-    // Fallback Client Creation
     const tripId = `trip-${Date.now()}`;
     const formattedTrip = {
       id: tripId,
@@ -400,6 +362,41 @@ export const TripProvider = ({ children }) => {
       ]
     };
 
+    // 1. Attempt inserting into Supabase trips table
+    try {
+      const supabasePayload = {
+        ...formattedTrip,
+        start_date: formattedTrip.startDate,
+        end_date: formattedTrip.endDate,
+        total_days: formattedTrip.totalDays,
+        cover_image: formattedTrip.coverImage,
+        total_budget: formattedTrip.totalBudget,
+        spent_budget: formattedTrip.spentBudget,
+        user_email: user?.email || 'guest@globetrotter.io'
+      };
+
+      const { data: sTrip, error: sErr } = await supabase.from('trips').insert([supabasePayload]).select();
+      if (!sErr && sTrip && sTrip.length > 0) {
+        console.log('✅ Created trip in Supabase database:', sTrip[0]);
+      } else if (sErr) {
+        console.warn('Supabase createTrip notice:', sErr.message);
+      }
+    } catch (sErr) {
+      console.warn('Supabase createTrip error:', sErr.message);
+    }
+
+    // 2. Attempt inserting into backend REST API
+    try {
+      await fetch(`${API_BASE_URL}/trips`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tripData: formattedTrip, user })
+      });
+    } catch (e) {
+      console.warn("Backend REST API createTrip warning:", e.message);
+    }
+
+    // 3. Update local state
     setTrips((prev) => [formattedTrip, ...prev]);
     setActiveTripId(tripId);
     addToast(`Successfully created "${formattedTrip.title}"!`, 'success');
@@ -408,9 +405,16 @@ export const TripProvider = ({ children }) => {
 
   const updateTrip = async (tripId, updatedFields) => {
     try {
+      const supabasePayload = {
+        ...updatedFields,
+        start_date: updatedFields.startDate || updatedFields.start_date,
+        end_date: updatedFields.endDate || updatedFields.end_date,
+        cover_image: updatedFields.coverImage || updatedFields.cover_image,
+        total_budget: updatedFields.totalBudget || updatedFields.total_budget
+      };
       const { data: sTrip, error: sErr } = await supabase
         .from('trips')
-        .update(updatedFields)
+        .update(supabasePayload)
         .eq('id', tripId)
         .select();
       if (!sErr && sTrip && sTrip.length > 0) {
@@ -427,6 +431,11 @@ export const TripProvider = ({ children }) => {
   };
 
   const deleteTrip = async (tripId) => {
+    try {
+      await supabase.from('trips').delete().eq('id', tripId);
+    } catch (sErr) {
+      console.warn("Supabase deleteTrip notice:", sErr.message);
+    }
     try {
       await fetch(`${API_BASE_URL}/trips/${tripId}`, { method: 'DELETE' });
     } catch (e) {
