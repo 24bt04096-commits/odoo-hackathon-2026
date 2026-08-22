@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { INITIAL_USER, INITIAL_TRIPS, POPULAR_DESTINATIONS, ACTIVITIES_CATALOG, ADMIN_METRICS } from '../data/mockData';
+import { supabase, supabaseSignIn, supabaseSignUp } from '../lib/supabase';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 const TripContext = createContext();
@@ -41,10 +42,17 @@ export const TripProvider = ({ children }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Fetch initial data from Backend REST API
+  // Fetch initial data from Supabase & Backend REST API
   useEffect(() => {
     const fetchBackendData = async () => {
       try {
+        // Fetch trips from Supabase if table exists
+        const { data: supabaseTrips, error: sErr } = await supabase.from('trips').select('*');
+        if (!sErr && supabaseTrips && supabaseTrips.length > 0) {
+          setTrips(supabaseTrips);
+          console.log('✅ Loaded trips from Supabase database');
+        }
+
         const [tripsRes, destRes, actRes, adminRes] = await Promise.all([
           fetch(`${API_BASE_URL}/trips`),
           fetch(`${API_BASE_URL}/destinations`),
@@ -52,7 +60,7 @@ export const TripProvider = ({ children }) => {
           fetch(`${API_BASE_URL}/admin/metrics`)
         ]);
 
-        if (tripsRes.ok) {
+        if (tripsRes.ok && (!supabaseTrips || supabaseTrips.length === 0)) {
           const tripsData = await tripsRes.json();
           if (tripsData.trips && tripsData.trips.length > 0) setTrips(tripsData.trips);
         }
@@ -72,7 +80,7 @@ export const TripProvider = ({ children }) => {
           if (adminData.metrics) setAdminMetrics(adminData.metrics);
         }
       } catch (err) {
-        console.warn("⚠️ API Backend offline, falling back to client storage:", err.message);
+        console.warn("⚠️ Backend fallback:", err.message);
       }
     };
 
@@ -88,8 +96,36 @@ export const TripProvider = ({ children }) => {
     localStorage.setItem('globetrotter_auth', isAuthenticated ? 'true' : 'false');
   }, [isAuthenticated]);
 
-  // Auth API Handlers
+  // Auth API Handlers (Integrated with Supabase Backend)
   const login = async (email, password) => {
+    // Attempt Supabase Auth
+    try {
+      const { data: supaData, error: supaErr } = await supabaseSignIn(email, password);
+      if (supaData && supaData.user) {
+        const supaUser = {
+          id: supaData.user.id,
+          name: supaData.user.user_metadata?.name || email.split('@')[0],
+          email: supaData.user.email,
+          avatar: supaData.user.user_metadata?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+          role: email.includes('admin') || supaData.user.email === 'alex.rivera@globetrotter.io' ? 'Admin' : 'Traveler',
+          memberSince: '2026',
+          homeCity: supaData.user.user_metadata?.city || 'San Francisco, CA',
+          currency: 'USD',
+          travelStyle: ['Cultural Explorer'],
+          stats: { countriesVisited: 12, tripsCompleted: 8, savedPlaces: 40 }
+        };
+
+        setUser(supaUser);
+        setIsAuthenticated(true);
+        localStorage.setItem('globetrotter_auth', 'true');
+        addToast(`Welcome back via Supabase, ${supaUser.name}!`, 'success');
+        setCurrentScreen(supaUser.role === 'Admin' ? 'admin' : 'dashboard');
+        return { success: true, user: supaUser };
+      }
+    } catch (err) {
+      console.log('Supabase auth notice:', err.message);
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -160,6 +196,21 @@ export const TripProvider = ({ children }) => {
         email: emailParam,
         password: passwordParam
       };
+    }
+
+    // Sync registration with Supabase Auth
+    try {
+      if (payload.email && payload.password) {
+        await supabaseSignUp(payload.email, payload.password, {
+          name: payload.name || `${payload.firstName} ${payload.lastName}`,
+          phone: payload.phone,
+          city: payload.city,
+          country: payload.country
+        });
+        console.log('✅ Synchronized user registration to Supabase Auth');
+      }
+    } catch (sErr) {
+      console.warn('Supabase signup notice:', sErr.message);
     }
 
     try {
@@ -248,6 +299,37 @@ export const TripProvider = ({ children }) => {
 
   // Trip API Operations
   const createTrip = async (newTripData) => {
+    // Attempt inserting into Supabase trips table
+    try {
+      const tripId = `trip-${Date.now()}`;
+      const formattedTrip = {
+        id: tripId,
+        title: newTripData.title || "New Adventure",
+        subtitle: newTripData.subtitle || "Custom multi-city journey",
+        status: "upcoming",
+        startDate: newTripData.startDate || "2026-11-01",
+        endDate: newTripData.endDate || "2026-11-10",
+        totalDays: Number(newTripData.totalDays) || 10,
+        coverImage: newTripData.coverImage || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1200&q=80",
+        totalBudget: Number(newTripData.totalBudget) || 2500,
+        spentBudget: 0,
+        currency: user?.currency || "USD",
+        travelers: [
+          { name: user?.name || "Traveler", avatar: user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80", role: "Owner" }
+        ],
+        cities: newTripData.cities || [
+          { id: "dest-tokyo", name: "Tokyo", daysCount: 5, order: 1, hotel: "Selected Hotel", dates: "Day 1 - Day 5" }
+        ]
+      };
+
+      const { data: sTrip, error: sErr } = await supabase.from('trips').insert([formattedTrip]).select();
+      if (!sErr && sTrip && sTrip.length > 0) {
+        console.log('✅ Created trip in Supabase database:', sTrip[0]);
+      }
+    } catch (sErr) {
+      console.warn('Supabase createTrip notice:', sErr.message);
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/trips`, {
         method: 'POST',
