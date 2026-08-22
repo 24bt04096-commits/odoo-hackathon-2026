@@ -38,9 +38,6 @@ export const Navbar = () => {
           <div>
             <span className="text-xl font-extrabold tracking-tight text-slate-900 flex items-center gap-1">
               Globe<span className="gradient-text">Trotter</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-brand-50 text-brand-600 border border-brand-200">
-                MVP
-              </span>
             </span>
             <p className="text-[11px] text-slate-500 font-medium -mt-1 hidden sm:block">AI-Powered Multi-City Planner</p>
           </div>
