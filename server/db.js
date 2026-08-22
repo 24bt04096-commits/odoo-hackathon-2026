@@ -74,15 +74,27 @@ export const db = {
   createUser: (userObj) => {
     const data = readDb();
     const passwordHash = Buffer.from(userObj.password || 'password123').toString('base64');
+    const firstName = userObj.firstName || userObj.name?.split(' ')[0] || 'Explorer';
+    const lastName = userObj.lastName || userObj.name?.split(' ').slice(1).join(' ') || '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    const city = userObj.city || 'San Francisco';
+    const country = userObj.country || 'USA';
+
     const newUser = {
       id: `user-${Date.now()}`,
       email: userObj.email,
-      passwordHash: passwordHash, // Encrypted/hashed password stored in database.json
-      name: userObj.name || 'Explorer',
+      passwordHash: passwordHash, // Hashed password stored in database.json
+      firstName: firstName,
+      lastName: lastName,
+      name: fullName,
+      phone: userObj.phone || '',
+      city: city,
+      country: country,
+      homeCity: `${city}, ${country}`,
+      additionalInfo: userObj.additionalInfo || '',
       avatar: userObj.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
       role: userObj.role || 'Traveler',
       memberSince: new Date().getFullYear().toString(),
-      homeCity: userObj.homeCity || 'San Francisco, CA',
       currency: userObj.currency || 'USD',
       travelStyle: ['Cultural Explorer', 'Foodie'],
       stats: { countriesVisited: 1, tripsCompleted: 0, savedPlaces: 5 }

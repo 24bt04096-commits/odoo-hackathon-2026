@@ -154,12 +154,25 @@ export const TripProvider = ({ children }) => {
     }
   };
 
-  const signup = async (name, email, password) => {
+  const signup = async (signupData, emailParam, passwordParam) => {
+    let payload;
+    if (typeof signupData === 'object' && signupData !== null) {
+      payload = signupData;
+    } else {
+      payload = {
+        name: signupData,
+        firstName: signupData?.split(' ')[0] || 'Traveler',
+        lastName: signupData?.split(' ').slice(1).join(' ') || '',
+        email: emailParam,
+        password: passwordParam
+      };
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       
@@ -170,24 +183,32 @@ export const TripProvider = ({ children }) => {
       setUser(data.user);
       setIsAuthenticated(true);
       localStorage.setItem('globetrotter_auth', 'true');
-      addToast(`Account created successfully! Welcome, ${data.user.name}!`, 'success');
+      addToast(`Account registered! Welcome, ${data.user.name}!`, 'success');
       setCurrentScreen('dashboard');
       return { success: true, user: data.user };
     } catch (e) {
       console.warn("⚠️ Authentication server offline. Creating account via local storage fallback.");
       const savedUsers = JSON.parse(localStorage.getItem('globetrotter_registered_users') || '[]');
-      if (savedUsers.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
+      const targetEmail = payload.email;
+      if (savedUsers.some((u) => u.email.toLowerCase() === targetEmail.toLowerCase())) {
         return { success: false, error: 'An account with this email already exists. Please Sign In instead!' };
       }
 
+      const fullName = payload.name || `${payload.firstName || ''} ${payload.lastName || ''}`.trim() || 'New Traveler';
       const newUserObj = {
-        name: name || 'New Traveler',
-        email: email,
-        password: password,
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+        name: fullName,
+        firstName: payload.firstName || fullName.split(' ')[0],
+        lastName: payload.lastName || '',
+        email: targetEmail,
+        password: payload.password,
+        phone: payload.phone || '',
+        city: payload.city || 'San Francisco',
+        country: payload.country || 'USA',
+        additionalInfo: payload.additionalInfo || '',
+        avatar: payload.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
         role: 'Traveler',
         memberSince: new Date().getFullYear().toString(),
-        homeCity: 'San Francisco, CA',
+        homeCity: `${payload.city || 'San Francisco'}, ${payload.country || 'USA'}`,
         currency: 'USD',
         travelStyle: ['Explorer'],
         stats: { countriesVisited: 1, tripsCompleted: 0, savedPlaces: 5 }

@@ -40,9 +40,9 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.post('/api/auth/signup', (req, res) => {
-  const { name, email, password } = req.body;
-  if (!email || !name || !password) {
-    return res.status(400).json({ success: false, error: 'Name, email, and password are required' });
+  const { firstName, lastName, email, phone, city, country, additionalInfo, avatar, password } = req.body;
+  if (!email || !password || (!firstName && !req.body.name)) {
+    return res.status(400).json({ success: false, error: 'First Name, Email Address, and Password are required' });
   }
 
   const existing = db.getUserByEmail(email);
@@ -53,7 +53,18 @@ app.post('/api/auth/signup', (req, res) => {
     });
   }
 
-  const newUser = db.createUser({ name, email, password });
+  const newUser = db.createUser({
+    firstName,
+    lastName,
+    name: req.body.name || `${firstName || ''} ${lastName || ''}`.trim(),
+    email,
+    phone,
+    city,
+    country,
+    additionalInfo,
+    avatar,
+    password
+  });
   res.status(201).json({ success: true, user: newUser, token: `token-${Date.now()}` });
 });
 

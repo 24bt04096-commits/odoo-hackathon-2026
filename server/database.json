@@ -63,6 +63,78 @@
         "tripsCompleted": 0,
         "savedPlaces": 5
       }
+    },
+    {
+      "id": "user-1787377120361",
+      "email": "vansh2006@gmail.com",
+      "passwordHash": "MTIzNDU2",
+      "name": "vansh",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80",
+      "role": "Traveler",
+      "memberSince": "2026",
+      "homeCity": "San Francisco, CA",
+      "currency": "USD",
+      "travelStyle": [
+        "Cultural Explorer",
+        "Foodie"
+      ],
+      "stats": {
+        "countriesVisited": 1,
+        "tripsCompleted": 0,
+        "savedPlaces": 5
+      }
+    },
+    {
+      "id": "user-1787378108557",
+      "email": "emily.watson@globetrotter.io",
+      "passwordHash": "cGFzc3dvcmQxMjM=",
+      "firstName": "Emily",
+      "lastName": "Watson",
+      "name": "Emily Watson",
+      "phone": "555-0192",
+      "city": "Seattle",
+      "country": "USA",
+      "homeCity": "Seattle, USA",
+      "additionalInfo": "Passionate traveler and photographer.",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80",
+      "role": "Traveler",
+      "memberSince": "2026",
+      "currency": "USD",
+      "travelStyle": [
+        "Cultural Explorer",
+        "Foodie"
+      ],
+      "stats": {
+        "countriesVisited": 1,
+        "tripsCompleted": 0,
+        "savedPlaces": 5
+      }
+    },
+    {
+      "id": "user-1787378256875",
+      "email": "24bt04096gsfcuniversity@gmail.com",
+      "passwordHash": "dmFuc2hAMTIzNA==",
+      "firstName": "vansh",
+      "lastName": "Praikh",
+      "name": "vansh Praikh",
+      "phone": "9023084301",
+      "city": "vadodara",
+      "country": "india",
+      "homeCity": "vadodara, india",
+      "additionalInfo": "",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80",
+      "role": "Traveler",
+      "memberSince": "2026",
+      "currency": "USD",
+      "travelStyle": [
+        "Cultural Explorer",
+        "Foodie"
+      ],
+      "stats": {
+        "countriesVisited": 1,
+        "tripsCompleted": 0,
+        "savedPlaces": 5
+      }
     }
   ],
   "trips": [
