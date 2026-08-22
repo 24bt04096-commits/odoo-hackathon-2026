@@ -19,6 +19,7 @@ import { CalendarView } from './components/calendar/CalendarView';
 import { PublicSharedTrip } from './components/shared/PublicSharedTrip';
 import { ProfileSettings } from './components/profile/ProfileSettings';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { CommunityTab } from './components/community/CommunityTab';
 
 const MainContent = () => {
   const { currentScreen, isAuthenticated } = useTripContext();
@@ -48,6 +49,8 @@ const MainContent = () => {
         return <CityDiscovery />;
       case 'activity-discovery':
         return <ActivityDiscovery />;
+      case 'community':
+        return <CommunityTab />;
       case 'budget':
         return <BudgetDashboard />;
       case 'calendar':
