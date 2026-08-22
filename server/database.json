@@ -135,6 +135,32 @@
         "tripsCompleted": 0,
         "savedPlaces": 5
       }
+    },
+    {
+      "id": "user-1787379318224",
+      "email": "24bt04035@gsfcuniversity.ac.in",
+      "passwordHash": "MTIzNDU2Nzg=",
+      "firstName": "Gothi",
+      "lastName": "Gaurangkumar",
+      "name": "Gothi Gaurangkumar",
+      "phone": "09023084301",
+      "city": "Vadodara",
+      "country": "India",
+      "homeCity": "Vadodara, India",
+      "additionalInfo": "",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80",
+      "role": "Traveler",
+      "memberSince": "2026",
+      "currency": "USD",
+      "travelStyle": [
+        "Cultural Explorer",
+        "Foodie"
+      ],
+      "stats": {
+        "countriesVisited": 1,
+        "tripsCompleted": 0,
+        "savedPlaces": 5
+      }
     }
   ],
   "trips": [
