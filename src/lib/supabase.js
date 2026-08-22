@@ -64,6 +64,45 @@ export const supabaseSignOut = async () => {
   }
 };
 
+// Submit Inquiry directly to Supabase inquiries table
+export const supabaseSubmitInquiry = async (inquiryData) => {
+  try {
+    const payload = {
+      first_name: inquiryData.firstName || inquiryData.first_name || 'Traveler',
+      last_name: inquiryData.lastName || inquiryData.last_name || '',
+      email: inquiryData.email,
+      phone: inquiryData.phone || '',
+      destination_interest: inquiryData.destinationInterest || inquiryData.destination_interest || 'General Inquiry',
+      travel_dates: inquiryData.travelDates || inquiryData.travel_dates || '',
+      number_of_guests: Number(inquiryData.numberOfGuests || inquiryData.number_of_guests) || 1,
+      budget_range: inquiryData.budgetRange || inquiryData.budget_range || '$1,000 - $3,000',
+      message: inquiryData.message,
+      status: 'new'
+    };
+
+    const { data, error } = await supabase.from('inquiries').insert([payload]).select();
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data: data?.[0] };
+  } catch (err) {
+    return { success: false, error: err.message || 'Failed to submit inquiry to Supabase.' };
+  }
+};
+
+// Fetch Inquiries directly from Supabase inquiries table
+export const supabaseGetInquiries = async () => {
+  try {
+    const { data, error } = await supabase.from('inquiries').select('*').order('created_at', { ascending: false });
+    if (error) {
+      return { success: false, error: error.message, data: [] };
+    }
+    return { success: true, data: data || [] };
+  } catch (err) {
+    return { success: false, error: err.message, data: [] };
+  }
+};
+
 // Get Active Supabase Session
 export const supabaseGetSession = async () => {
   try {
