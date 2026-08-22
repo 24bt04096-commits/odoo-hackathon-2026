@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TripProvider, useTripContext } from './context/TripContext';
 import { Navbar } from './components/layout/Navbar';
 import { MobileNav } from './components/layout/MobileNav';
@@ -23,6 +23,11 @@ import { CommunityTab } from './components/community/CommunityTab';
 
 const MainContent = () => {
   const { currentScreen, isAuthenticated } = useTripContext();
+
+  // Scroll to the top of the page on every screen/page transition
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [currentScreen]);
 
   const renderScreen = () => {
     // Unauthenticated user attempting to open website or access protected screens gets redirected to AuthPage
