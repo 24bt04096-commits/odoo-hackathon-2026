@@ -357,7 +357,8 @@ export const TripProvider = ({ children }) => {
     const formattedTrip = {
       id: tripId,
       title: newTripData.title || "New Adventure",
-      subtitle: newTripData.subtitle || "Custom multi-city journey",
+      subtitle: newTripData.subtitle || newTripData.description || "Custom multi-city journey",
+      description: newTripData.description || "",
       status: "upcoming",
       startDate: newTripData.startDate || "2026-11-01",
       endDate: newTripData.endDate || "2026-11-10",
@@ -403,6 +404,26 @@ export const TripProvider = ({ children }) => {
     setActiveTripId(tripId);
     addToast(`Successfully created "${formattedTrip.title}"!`, 'success');
     setCurrentScreen('itinerary-builder');
+  };
+
+  const updateTrip = async (tripId, updatedFields) => {
+    try {
+      const { data: sTrip, error: sErr } = await supabase
+        .from('trips')
+        .update(updatedFields)
+        .eq('id', tripId)
+        .select();
+      if (!sErr && sTrip && sTrip.length > 0) {
+        console.log('✅ Updated trip in Supabase database:', sTrip[0]);
+      }
+    } catch (sErr) {
+      console.warn('Supabase updateTrip notice:', sErr.message);
+    }
+
+    setTrips((prev) =>
+      prev.map((t) => (t.id === tripId ? { ...t, ...updatedFields } : t))
+    );
+    addToast('Trip details updated successfully!', 'success');
   };
 
   const deleteTrip = async (tripId) => {
@@ -540,6 +561,7 @@ export const TripProvider = ({ children }) => {
         removeToast,
         formatCurrency,
         createTrip,
+        updateTrip,
         deleteTrip,
         addActivityToTrip,
         removeActivityFromTrip

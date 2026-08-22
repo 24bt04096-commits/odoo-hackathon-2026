@@ -21,10 +21,20 @@ export const CreateTripWizard = () => {
 
   // Form State matching Screen 4 wireframe
   const [tripTitle, setTripTitle] = useState('My Multi-City Escapade');
+  const [tripDescription, setTripDescription] = useState('An exciting journey exploring scenic landscapes, cultural heritage, and local gastronomy.');
+  const [coverImage, setCoverImage] = useState('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80');
   const [selectedPlace, setSelectedPlace] = useState('dest-paris');
   const [startDate, setStartDate] = useState('2026-11-01');
   const [endDate, setEndDate] = useState('2026-11-10');
   const [addedSuggestions, setAddedSuggestions] = useState(['act-paris-1', 'act-tokyo-1']);
+
+  // Preset cover image options
+  const presetCoverImages = [
+    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=600&q=80',
+  ];
 
   // Suggestions for Places to Visit / Activities to perform (6 items)
   const suggestedPlacesAndActivities = [
@@ -127,12 +137,13 @@ export const CreateTripWizard = () => {
 
     createTrip({
       title: tripTitle || `Trip to ${selectedDest.name}`,
-      subtitle: `Exploring ${selectedDest.name} and surrounding highlights`,
+      subtitle: tripDescription || `Exploring ${selectedDest.name} and surrounding highlights`,
+      description: tripDescription,
       startDate,
       endDate,
       totalDays: 5,
       totalBudget: 2500,
-      coverImage: selectedDest.heroImage,
+      coverImage: coverImage || selectedDest.heroImage,
       cities: initialCities,
       itinerary: initialItinerary
     });
@@ -145,11 +156,11 @@ export const CreateTripWizard = () => {
       <div className="space-y-1">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 text-brand-600 border border-brand-200 text-xs font-bold uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          Create a new Trip (Screen 4)
+          Create a new Trip (Screen 3)
         </div>
         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Create a new Trip</h1>
         <p className="text-xs sm:text-sm text-slate-500">
-          Specify your trip title, target location, date range, and select suggested places to visit.
+          Specify your trip name, travel dates, trip description, cover photo, and select suggested places to visit.
         </p>
       </div>
 
@@ -165,10 +176,10 @@ export const CreateTripWizard = () => {
 
         <form onSubmit={handleCreateTrip} className="space-y-5">
           
-          {/* Trip Title */}
+          {/* Trip Title / Name */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Trip Title:
+              Trip Name / Title:
             </label>
             <input
               type="text"
@@ -180,6 +191,20 @@ export const CreateTripWizard = () => {
             />
           </div>
 
+          {/* Trip Description */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Trip Description:
+            </label>
+            <textarea
+              rows="3"
+              value={tripDescription}
+              onChange={(e) => setTripDescription(e.target.value)}
+              placeholder="Provide a short description or notes about your upcoming trip..."
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all resize-none"
+            ></textarea>
+          </div>
+
           {/* Select a Place : */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
@@ -188,7 +213,11 @@ export const CreateTripWizard = () => {
             <div className="relative">
               <select
                 value={selectedPlace}
-                onChange={(e) => setSelectedPlace(e.target.value)}
+                onChange={(e) => {
+                  setSelectedPlace(e.target.value);
+                  const dest = destinations.find(d => d.id === e.target.value);
+                  if (dest && dest.heroImage) setCoverImage(dest.heroImage);
+                }}
                 className="w-full appearance-none px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all cursor-pointer"
               >
                 {destinations.map((d) => (
@@ -198,6 +227,49 @@ export const CreateTripWizard = () => {
                 ))}
               </select>
               <MapPin className="w-4 h-4 text-slate-400 absolute right-4 top-3.5 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Cover Photo Upload (Optional) */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              Cover Photo Upload (Optional):
+            </label>
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="url"
+                  value={coverImage}
+                  onChange={(e) => setCoverImage(e.target.value)}
+                  placeholder="Paste cover photo image URL..."
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+                />
+                <label className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors text-center shrink-0">
+                  📁 Choose File
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const url = URL.createObjectURL(file);
+                        setCoverImage(url);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              {/* Cover Photo Preview & Presets */}
+              {coverImage && (
+                <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 shadow-inner">
+                  <img src={coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
+                  <span className="absolute bottom-2 left-2 bg-slate-900/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs">
+                    Cover Photo Preview
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -244,7 +316,7 @@ export const CreateTripWizard = () => {
               type="submit"
               className="w-full sm:w-auto bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold text-sm px-8 py-3.5 rounded-xl shadow-glow transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
             >
-              <span>Create Trip & Launch Builder</span>
+              <span>Save & Launch Itinerary Builder</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
