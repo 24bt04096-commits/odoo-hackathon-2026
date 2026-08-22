@@ -23,17 +23,18 @@ CREATE TABLE IF NOT EXISTS public.inquiries (
 -- Enable Row Level Security (RLS) for Supabase
 ALTER TABLE public.inquiries ENABLE ROW LEVEL SECURITY;
 
--- Allow public anonymous inserts (for inquiry form submissions)
-CREATE POLICY "Allow public insert on inquiries" 
-ON public.inquiries 
-FOR INSERT 
-WITH CHECK (true);
+-- Drop old policies to prevent policy conflicts
+DROP POLICY IF EXISTS "Allow public insert on inquiries" ON public.inquiries;
+DROP POLICY IF EXISTS "Allow admin read access on inquiries" ON public.inquiries;
+DROP POLICY IF EXISTS "Allow public select on inquiries" ON public.inquiries;
+DROP POLICY IF EXISTS "Enable all access for all users" ON public.inquiries;
 
--- Allow authenticated admins to view all inquiries
-CREATE POLICY "Allow admin read access on inquiries" 
+-- Create policy allowing full read & write access for inquiries table
+CREATE POLICY "Enable all access for all users" 
 ON public.inquiries 
-FOR SELECT 
-USING (auth.role() = 'authenticated' OR auth.role() = 'service_role');
+FOR ALL 
+USING (true) 
+WITH CHECK (true);
 
 -- Index for fast query filtering by status & email
 CREATE INDEX IF NOT EXISTS idx_inquiries_email ON public.inquiries(email);
