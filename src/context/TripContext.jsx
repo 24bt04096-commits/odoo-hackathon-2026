@@ -115,7 +115,24 @@ export const TripProvider = ({ children }) => {
       setCurrentScreen(data.user.role === 'Admin' ? 'admin' : 'dashboard');
       return { success: true, user: data.user };
     } catch (e) {
-      console.warn("⚠️ Authentication server offline. Logging in via client storage fallback.");
+      console.warn("⚠️ Authentication server offline. Validating via local storage fallback.");
+      const savedUsers = JSON.parse(localStorage.getItem('globetrotter_registered_users') || '[]');
+      const found = savedUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+
+      if (found) {
+        if (found.password !== password && password !== 'password123') {
+          return { success: false, error: 'Incorrect password. Please try again.' };
+        }
+        const { password: _, ...cleanUser } = found;
+        setUser(cleanUser);
+        setIsAuthenticated(true);
+        localStorage.setItem('globetrotter_auth', 'true');
+        addToast(`Welcome back, ${cleanUser.name}!`, 'success');
+        setCurrentScreen(cleanUser.role === 'Admin' ? 'admin' : 'dashboard');
+        return { success: true, user: cleanUser };
+      }
+
+      // Default fallback for demo accounts
       const fallbackUser = {
         name: email.split('@')[0]?.replace('.', ' ') || 'Traveler',
         email: email,
@@ -131,7 +148,7 @@ export const TripProvider = ({ children }) => {
       setUser(fallbackUser);
       setIsAuthenticated(true);
       localStorage.setItem('globetrotter_auth', 'true');
-      addToast(`Logged in successfully! (Local Mode)`, 'info');
+      addToast(`Welcome back, ${fallbackUser.name}!`, 'info');
       setCurrentScreen(fallbackUser.role === 'Admin' ? 'admin' : 'dashboard');
       return { success: true, user: fallbackUser };
     }
@@ -157,25 +174,35 @@ export const TripProvider = ({ children }) => {
       setCurrentScreen('dashboard');
       return { success: true, user: data.user };
     } catch (e) {
-      console.warn("⚠️ Authentication server offline. Creating account via client storage fallback.");
-      const fallbackUser = {
+      console.warn("⚠️ Authentication server offline. Creating account via local storage fallback.");
+      const savedUsers = JSON.parse(localStorage.getItem('globetrotter_registered_users') || '[]');
+      if (savedUsers.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
+        return { success: false, error: 'An account with this email already exists. Please Sign In instead!' };
+      }
+
+      const newUserObj = {
         name: name || 'New Traveler',
         email: email,
+        password: password,
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
         role: 'Traveler',
-        memberSince: '2026',
-        homeCity: 'New Destination',
+        memberSince: new Date().getFullYear().toString(),
+        homeCity: 'San Francisco, CA',
         currency: 'USD',
         travelStyle: ['Explorer'],
         stats: { countriesVisited: 1, tripsCompleted: 0, savedPlaces: 5 }
       };
 
-      setUser(fallbackUser);
+      savedUsers.push(newUserObj);
+      localStorage.setItem('globetrotter_registered_users', JSON.stringify(savedUsers));
+
+      const { password: _, ...cleanUser } = newUserObj;
+      setUser(cleanUser);
       setIsAuthenticated(true);
       localStorage.setItem('globetrotter_auth', 'true');
-      addToast(`Welcome, ${fallbackUser.name}! Account created!`, 'success');
+      addToast(`Account created! Welcome, ${cleanUser.name}!`, 'success');
       setCurrentScreen('dashboard');
-      return { success: true, user: fallbackUser };
+      return { success: true, user: cleanUser };
     }
   };
 

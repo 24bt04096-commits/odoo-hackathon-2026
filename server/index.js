@@ -20,11 +20,19 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(400).json({ success: false, error: 'Email and password are required' });
   }
 
-  const user = db.getUserByEmail(email);
-  if (!user) {
+  const existing = db.getUserByEmail(email);
+  if (!existing) {
     return res.status(404).json({ 
       success: false, 
       error: 'No account found with this email. Please click "Need an account?" to Sign Up first!' 
+    });
+  }
+
+  const user = db.validateUser(email, password);
+  if (!user) {
+    return res.status(401).json({ 
+      success: false, 
+      error: 'Incorrect password. Please verify your credentials and try again.' 
     });
   }
 
@@ -45,7 +53,7 @@ app.post('/api/auth/signup', (req, res) => {
     });
   }
 
-  const newUser = db.createUser({ name, email });
+  const newUser = db.createUser({ name, email, password });
   res.status(201).json({ success: true, user: newUser, token: `token-${Date.now()}` });
 });
 

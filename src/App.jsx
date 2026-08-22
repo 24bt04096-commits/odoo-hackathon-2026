@@ -24,9 +24,8 @@ const MainContent = () => {
   const { currentScreen, isAuthenticated } = useTripContext();
 
   const renderScreen = () => {
-    // Unauthenticated user attempting to access protected screens gets redirected to AuthPage
-    const publicScreens = ['landing', 'auth', 'public-share'];
-    if (!isAuthenticated && !publicScreens.includes(currentScreen)) {
+    // Unauthenticated user attempting to open website or access protected screens gets redirected to AuthPage
+    if (!isAuthenticated && currentScreen !== 'public-share') {
       return <AuthPage />;
     }
 

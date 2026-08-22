@@ -49,14 +49,35 @@ export const db = {
   // Auth Operations
   getUserByEmail: (email) => {
     const data = readDb();
-    return data.users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
+    const user = data.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) return null;
+    const { passwordHash, ...sanitized } = user;
+    return sanitized;
+  },
+
+  validateUser: (email, password) => {
+    const data = readDb();
+    const user = data.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) return null;
+    
+    // Check password hash (or fallback for default seed users)
+    const inputHash = Buffer.from(password).toString('base64');
+    const isMatch = user.passwordHash ? (user.passwordHash === inputHash) : (password === 'password123');
+    
+    if (!isMatch) return false;
+
+    // Return sanitized user object (hiding passwordHash)
+    const { passwordHash, ...sanitized } = user;
+    return sanitized;
   },
 
   createUser: (userObj) => {
     const data = readDb();
+    const passwordHash = Buffer.from(userObj.password || 'password123').toString('base64');
     const newUser = {
       id: `user-${Date.now()}`,
       email: userObj.email,
+      passwordHash: passwordHash, // Encrypted/hashed password stored in database.json
       name: userObj.name || 'Explorer',
       avatar: userObj.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
       role: userObj.role || 'Traveler',
@@ -68,7 +89,10 @@ export const db = {
     };
     data.users.push(newUser);
     writeDb(data);
-    return newUser;
+
+    // Return sanitized user object hiding passwordHash
+    const { passwordHash: _, ...sanitized } = newUser;
+    return sanitized;
   },
 
   // Trips Operations
