@@ -24,7 +24,7 @@ export const CommunityTab = () => {
   const [filterBy, setFilterBy] = useState('All');
   const [sortBy, setSortBy] = useState('Most Liked');
 
-  // Community posts data matching Screen 10 layout
+  // Community posts data
   const [posts, setPosts] = useState([
     {
       id: 'post-1',
@@ -35,7 +35,7 @@ export const CommunityTab = () => {
       postDate: '2 hours ago',
       rating: 5.0,
       tripTag: 'Swiss Alps & Rhine Express',
-      experienceText: 'Community section where all the users can share their experience about a certain trip or activity: Tandem paragliding over the Lauterbrunnen Valley was the highlight of our 10-day Swiss trip! The views of Eiger and Jungfrau were completely surreal. Highly recommend booking early morning slots for calmest winds.',
+      experienceText: 'Tandem paragliding over the Lauterbrunnen Valley was the highlight of our 10-day Swiss trip! The views of Eiger and Jungfrau were completely surreal. Highly recommend booking early morning slots for calmest winds.',
       image: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=600&q=80',
       likes: 342,
       comments: 28,
@@ -50,7 +50,7 @@ export const CommunityTab = () => {
       postDate: '5 hours ago',
       rating: 4.9,
       tripTag: 'Grand Japan Sakura Odyssey',
-      experienceText: 'Community section where all the users can share their experience about a certain trip or activity: Taking the early morning Nozomi Shinkansen from Tokyo Station to Kyoto gave us stunning views of Mount Fuji on the right-hand window side (seats E/D). Don’t miss Shibuya Sky sunset!',
+      experienceText: 'Taking the early morning Nozomi Shinkansen from Tokyo Station to Kyoto gave us stunning views of Mount Fuji on the right-hand window side (seats E/D). Don’t miss Shibuya Sky sunset!',
       image: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80',
       likes: 512,
       comments: 45,
@@ -65,7 +65,7 @@ export const CommunityTab = () => {
       postDate: '1 day ago',
       rating: 4.8,
       tripTag: 'Mediterranean Coastal Sunset Tour',
-      experienceText: 'Community section where all the users can share their experience about a certain trip or activity: Renting a private wooden gozzo boat in Capri for 3 hours allowed us to swim inside the Green Cave and White Grotto without the crowded ferry tours.',
+      experienceText: 'Renting a private wooden gozzo boat in Capri for 3 hours allowed us to swim inside the Green Cave and White Grotto without the crowded ferry tours.',
       image: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=600&q=80',
       likes: 289,
       comments: 19,
@@ -80,7 +80,7 @@ export const CommunityTab = () => {
       postDate: '2 days ago',
       rating: 5.0,
       tripTag: 'Icelandic Northern Lights Expedition',
-      experienceText: 'Community section where all the users can share their experience about a certain trip or activity: We caught the Aurora Borealis right over Skógafoss waterfall around 11:30 PM! Tip: Keep camera shutter speed around 4-6 seconds with ISO 1600.',
+      experienceText: 'We caught the Aurora Borealis right over Skógafoss waterfall around 11:30 PM! Tip: Keep camera shutter speed around 4-6 seconds with ISO 1600.',
       image: 'https://images.unsplash.com/photo-1504893524553-b855bce32c67?auto=format&fit=crop&w=600&q=80',
       likes: 674,
       comments: 54,
@@ -105,32 +105,43 @@ export const CommunityTab = () => {
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto space-y-8 font-sans">
       
       {/* Header Tag */}
-      <div className="space-y-1">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 text-brand-600 border border-brand-200 text-xs font-bold uppercase tracking-wider">
-          <Users className="w-3.5 h-3.5 text-brand-600" />
-          Community tab Screen (Screen 10)
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 text-brand-600 border border-brand-200 text-xs font-bold uppercase tracking-wider">
+            <Users className="w-3.5 h-3.5 text-brand-600" />
+            Traveler Community
+          </div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Traveler Community & Shared Experiences</h1>
+          <p className="text-xs sm:text-sm text-slate-500">
+            Connect with global adventurers, explore authentic trip reviews, and copy top community itineraries.
+          </p>
         </div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Traveler Community & Shared Experiences</h1>
-        <p className="text-xs sm:text-sm text-slate-500">
-          Connect with global adventurers, explore authentic trip reviews, and copy top community itineraries.
-        </p>
+
+        <button
+          type="button"
+          onClick={() => addToast('Share experience dialog coming soon!', 'info')}
+          className="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-2xl shadow-glow transition-all hover:scale-105 flex items-center gap-2 shrink-0 self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4 text-amber-300" />
+          <span>Create Community Post</span>
+        </button>
       </div>
 
       {/* ========================================================= */}
-      {/* TOP CONTROL BAR MATCHING WIREFRAME                        */}
+      {/* TOP CONTROL BAR                                           */}
       {/* [ Search bar ......               ] | Group by | Filter | Sort by... */}
       {/* ========================================================= */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-soft flex flex-col md:flex-row items-center gap-3">
         
-        {/* Search bar ...... */}
+        {/* Search bar */}
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search bar ......"
+            placeholder="Search stories, destinations, or activities..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-extrabold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all"
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all"
           />
         </div>
 
@@ -172,35 +183,6 @@ export const CommunityTab = () => {
             <option value="Newest First">Sort by: Newest First</option>
             <option value="Highest Rating">Sort by: Rating</option>
           </select>
-        </div>
-
-      </div>
-
-      {/* ========================================================= */}
-      {/* WIREFRAME DESCRIPTION BANNER & SECTION TITLE               */}
-      {/* ========================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        
-        <div className="lg:col-span-4 bg-gradient-to-br from-brand-600 to-indigo-700 text-white rounded-3xl p-6 shadow-glow space-y-2">
-          <h2 className="text-2xl font-black tracking-tight">Community tab</h2>
-          <p className="text-xs text-brand-100 font-medium leading-relaxed">
-            Community section where all the users can share their experience about a certain trip or activity. Using the search, groupby or filter and sortby option, the user can narrow down the result that he is looking for...
-          </p>
-        </div>
-
-        <div className="lg:col-span-8 bg-white rounded-3xl p-6 border border-slate-200/80 shadow-soft flex items-center justify-between">
-          <div className="space-y-1">
-            <h3 className="text-lg font-black text-slate-900">Share Your Experience</h3>
-            <p className="text-xs text-slate-500">Post photos, tips, and budget insights for travelers worldwide.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => addToast('Share experience dialog coming soon!', 'info')}
-            className="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-2xl shadow-glow transition-all hover:scale-105 flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4 text-amber-300" />
-            <span>Create Community Post</span>
-          </button>
         </div>
 
       </div>
