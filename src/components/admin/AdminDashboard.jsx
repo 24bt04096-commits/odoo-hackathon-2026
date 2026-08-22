@@ -21,9 +21,9 @@ import {
 } from 'lucide-react';
 
 export const AdminDashboard = () => {
-  const { user, setCurrentScreen, adminMetrics, addToast } = useTripContext();
+  const { user, setCurrentScreen, adminMetrics, inquiries = [], updateInquiryStatus, addToast } = useTripContext();
 
-  const [activeTab, setActiveTab] = useState('manage-users'); // manage-users, popular-cities, popular-activities, user-trends
+  const [activeTab, setActiveTab] = useState('inquiries'); // inquiries, manage-users, popular-cities, popular-activities, user-trends
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState('User Role');
   const [filterBy, setFilterBy] = useState('All');
@@ -70,7 +70,6 @@ export const AdminDashboard = () => {
             <button
               onClick={() => {
                 addToast('Demonstration Admin Access Granted for Alex Rivera!', 'success');
-                // Grant admin access for demo
                 if (user) user.role = 'admin';
               }}
               className="px-5 py-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-glow transition-all flex items-center justify-center gap-2"
@@ -92,85 +91,62 @@ export const AdminDashboard = () => {
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold uppercase tracking-wider">
             <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-            Admin Panel Screen / Screen 12
+            Admin Telemetry & Supabase Database
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">System Telemetry & Platform Governance</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">System Telemetry & Inquiry Submissions</h1>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200 flex items-center gap-1.5 shadow-xs">
-            <Activity className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> Live Telemetry 99.99%
+            <Activity className="w-3.5 h-3.5 text-emerald-500 animate-pulse" /> Supabase Live ({inquiries.length} Inquiries)
           </span>
         </div>
       </div>
 
-      {/* ========================================================= */}
-      {/* TOP CONTROL BAR MATCHING WIREFRAME                        */}
-      {/* [ Search bar ......               ] | Group by | Filter | Sort by... */}
-      {/* ========================================================= */}
+      {/* TOP CONTROL BAR */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-soft flex flex-col md:flex-row items-center gap-3">
-        
-        {/* Search bar ...... */}
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search bar ......"
+            placeholder="Search inquiries or users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-extrabold text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all"
           />
         </div>
 
-        {/* Group by */}
-        <div className="w-full md:w-auto">
-          <select
-            value={groupBy}
-            onChange={(e) => setGroupBy(e.target.value)}
-            className="w-full md:w-36 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none cursor-pointer"
-          >
-            <option value="User Role">Group by: Role</option>
-            <option value="Region">Group by: Region</option>
-            <option value="Activity">Group by: Activity</option>
-          </select>
-        </div>
-
-        {/* Filter */}
         <div className="w-full md:w-auto">
           <select
             value={filterBy}
             onChange={(e) => setFilterBy(e.target.value)}
-            className="w-full md:w-36 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none cursor-pointer"
+            className="w-full md:w-44 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none cursor-pointer"
           >
-            <option value="All">Filter: All Users</option>
-            <option value="Active">Filter: Active Only</option>
-            <option value="Suspended">Filter: Suspended</option>
+            <option value="All">Filter: All Statuses</option>
+            <option value="new">Filter: New Only</option>
+            <option value="contacted">Filter: Contacted</option>
+            <option value="resolved">Filter: Resolved</option>
           </select>
         </div>
-
-        {/* Sort by... */}
-        <div className="w-full md:w-auto">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="w-full md:w-36 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none cursor-pointer"
-          >
-            <option value="Newest">Sort by: Newest</option>
-            <option value="Most Trips">Sort by: Most Trips</option>
-            <option value="Name">Sort by: Name</option>
-          </select>
-        </div>
-
       </div>
 
-      {/* ========================================================= */}
-      {/* 4 HORIZONTAL PILL TABS MATCHING WIREFRAME                */}
-      {/* [ Manage Users ] [ Popular cities ] [ Popular Activites ] [ User Trends and Analytics ] */}
-      {/* ========================================================= */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* 5 HORIZONTAL PILL TABS */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <button
+          onClick={() => setActiveTab('inquiries')}
+          className={`px-4 py-3.5 rounded-2xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
+            activeTab === 'inquiries'
+              ? 'bg-brand-600 text-white border-brand-600 shadow-glow'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+          }`}
+        >
+          <FileText className="w-4 h-4 text-amber-300" />
+          Inquiries ({inquiries.length})
+        </button>
+
         <button
           onClick={() => setActiveTab('manage-users')}
-          className={`px-5 py-3.5 rounded-2xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
+          className={`px-4 py-3.5 rounded-2xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
             activeTab === 'manage-users'
               ? 'bg-slate-900 text-white border-slate-900 shadow-md'
               : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
@@ -182,7 +158,7 @@ export const AdminDashboard = () => {
 
         <button
           onClick={() => setActiveTab('popular-cities')}
-          className={`px-5 py-3.5 rounded-2xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
+          className={`px-4 py-3.5 rounded-2xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
             activeTab === 'popular-cities'
               ? 'bg-slate-900 text-white border-slate-900 shadow-md'
               : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
@@ -194,7 +170,7 @@ export const AdminDashboard = () => {
 
         <button
           onClick={() => setActiveTab('popular-activities')}
-          className={`px-5 py-3.5 rounded-2xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
+          className={`px-4 py-3.5 rounded-2xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
             activeTab === 'popular-activities'
               ? 'bg-slate-900 text-white border-slate-900 shadow-md'
               : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
@@ -206,14 +182,14 @@ export const AdminDashboard = () => {
 
         <button
           onClick={() => setActiveTab('user-trends')}
-          className={`px-5 py-3.5 rounded-2xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
+          className={`px-4 py-3.5 rounded-2xl font-black text-xs sm:text-sm border transition-all flex items-center justify-center gap-2 ${
             activeTab === 'user-trends'
               ? 'bg-slate-900 text-white border-slate-900 shadow-md'
               : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
           }`}
         >
           <TrendingUp className="w-4 h-4 text-brand-400" />
-          User Trends and Analytics
+          User Trends
         </button>
       </div>
 
@@ -338,12 +314,87 @@ export const AdminDashboard = () => {
                   {activeTab.replace('-', ' ')}
                 </h3>
                 <span className="text-xs font-extrabold text-brand-600 bg-brand-50 px-3 py-1 rounded-full border border-brand-200">
+                  {activeTab === 'inquiries' && `${inquiries.length} Supabase Records`}
                   {activeTab === 'manage-users' && '5 Total Accounts'}
                   {activeTab === 'popular-cities' && 'Top Destination Ranking'}
                   {activeTab === 'popular-activities' && 'Top Activity Ranking'}
                   {activeTab === 'user-trends' && 'Annual Analytics Breakdown'}
                 </span>
               </div>
+
+              {/* TAB 0: INQUIRIES FROM SUPABASE */}
+              {activeTab === 'inquiries' && (
+                <div className="space-y-4">
+                  {inquiries.length === 0 ? (
+                    <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
+                      <FileText className="w-10 h-10 text-slate-400 mx-auto mb-2" />
+                      <p className="text-sm font-bold text-slate-700">No inquiries found in Supabase.</p>
+                      <p className="text-xs text-slate-500 mt-1">Submit an inquiry using the "Inquiry" button on top to view it here!</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs font-semibold">
+                        <thead className="bg-slate-100 text-slate-700 uppercase font-black">
+                          <tr>
+                            <th className="p-3 rounded-l-xl">Traveler Name</th>
+                            <th className="p-3">Email & Phone</th>
+                            <th className="p-3">Destination</th>
+                            <th className="p-3">Dates & Guests</th>
+                            <th className="p-3">Message</th>
+                            <th className="p-3">Status</th>
+                            <th className="p-3 text-right rounded-r-xl">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {inquiries
+                            .filter(inq => filterBy === 'All' || inq.status === filterBy)
+                            .map((inq) => (
+                              <tr key={inq.id} className="hover:bg-slate-50 transition-colors">
+                                <td className="p-3 font-extrabold text-slate-900">
+                                  {inq.first_name || inq.firstName || 'Traveler'} {inq.last_name || inq.lastName || ''}
+                                </td>
+                                <td className="p-3">
+                                  <div className="text-slate-900 font-bold">{inq.email}</div>
+                                  <div className="text-[10px] text-slate-500">{inq.phone || 'No phone'}</div>
+                                </td>
+                                <td className="p-3 font-bold text-brand-600">
+                                  {inq.destination_interest || inq.destinationInterest || 'General'}
+                                </td>
+                                <td className="p-3 text-slate-700">
+                                  <div>{inq.travel_dates || inq.travelDates || 'Flexible'}</div>
+                                  <div className="text-[10px] font-bold text-slate-500">{inq.number_of_guests || 1} Guests • {inq.budget_range || '$1,000+'}</div>
+                                </td>
+                                <td className="p-3 text-slate-600 max-w-xs truncate" title={inq.message}>
+                                  {inq.message}
+                                </td>
+                                <td className="p-3">
+                                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                                    inq.status === 'new' ? 'bg-amber-100 text-amber-800' :
+                                    inq.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-emerald-100 text-emerald-800'
+                                  }`}>
+                                    {inq.status || 'new'}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-right">
+                                  <select
+                                    value={inq.status || 'new'}
+                                    onChange={(e) => updateInquiryStatus(inq.id, e.target.value)}
+                                    className="px-2 py-1 bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-800 focus:ring-1 focus:ring-brand-500"
+                                  >
+                                    <option value="new">New</option>
+                                    <option value="contacted">Contacted</option>
+                                    <option value="resolved">Resolved</option>
+                                  </select>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* TAB 1: MANAGE USERS */}
               {activeTab === 'manage-users' && (

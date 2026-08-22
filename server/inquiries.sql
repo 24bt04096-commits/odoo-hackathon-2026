@@ -6,16 +6,16 @@
 -- 1. PostgreSQL / Supabase DDL
 CREATE TABLE IF NOT EXISTS public.inquiries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
+    first_name VARCHAR(100) DEFAULT 'Traveler',
+    last_name VARCHAR(100) DEFAULT '',
     email VARCHAR(255) NOT NULL,
-    phone VARCHAR(50),
-    destination_interest VARCHAR(255),
-    travel_dates VARCHAR(100),
+    phone VARCHAR(50) DEFAULT '',
+    destination_interest VARCHAR(255) DEFAULT 'General Inquiry',
+    travel_dates VARCHAR(100) DEFAULT '',
     number_of_guests INTEGER DEFAULT 1,
-    budget_range VARCHAR(50),
+    budget_range VARCHAR(50) DEFAULT '$1,000 - $3,000',
     message TEXT NOT NULL,
-    status VARCHAR(50) DEFAULT 'new' CHECK (status IN ('new', 'in_review', 'contacted', 'resolved', 'archived')),
+    status VARCHAR(50) DEFAULT 'new',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

@@ -21,8 +21,11 @@ import { ProfileSettings } from './components/profile/ProfileSettings';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { CommunityTab } from './components/community/CommunityTab';
 
+import { InquiryModal } from './components/common/InquiryModal';
+
 const MainContent = () => {
   const { currentScreen, isAuthenticated } = useTripContext();
+  const [isInquiryOpen, setIsInquiryOpen] = React.useState(false);
 
   // Scroll to the top of the page on every screen/page transition
   useEffect(() => {
@@ -37,7 +40,7 @@ const MainContent = () => {
 
     switch (currentScreen) {
       case 'landing':
-        return <LandingPage />;
+        return <LandingPage onOpenInquiry={() => setIsInquiryOpen(true)} />;
       case 'auth':
         return <AuthPage />;
       case 'dashboard':
@@ -75,12 +78,13 @@ const MainContent = () => {
 
   return (
     <div className="min-h-screen flex flex-col justify-between font-sans bg-slate-50 text-slate-900 selection:bg-brand-500 selection:text-white">
-      {!isFullscreenAuth && <Navbar />}
+      {!isFullscreenAuth && <Navbar onOpenInquiry={() => setIsInquiryOpen(true)} />}
       <main className="flex-grow">
         {renderScreen()}
       </main>
-      {!isFullscreenAuth && <Footer />}
+      {!isFullscreenAuth && <Footer onOpenInquiry={() => setIsInquiryOpen(true)} />}
       {!isFullscreenAuth && isAuthenticated && <MobileNav />}
+      <InquiryModal isOpen={isInquiryOpen} onClose={() => setIsInquiryOpen(false)} />
       <ToastContainer />
     </div>
   );

@@ -19,7 +19,7 @@ import {
   LogIn
 } from 'lucide-react';
 
-export const Navbar = () => {
+export const Navbar = ({ onOpenInquiry }) => {
   const { currentScreen, setCurrentScreen, user, isAuthenticated, logout } = useTripContext();
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [discoverDropdownOpen, setDiscoverDropdownOpen] = useState(false);
@@ -63,7 +63,7 @@ export const Navbar = () => {
           </div>
         </div>
 
-        {/* Navigation Items - Overflow clipping removed to allow absolute dropdowns to show */}
+        {/* Navigation Items */}
         {isAuthenticated && (
           <nav className="hidden md:flex items-center gap-1 xl:gap-1.5 py-1">
             <button
@@ -200,7 +200,15 @@ export const Navbar = () => {
         )}
 
         {/* Right CTA & Profile Dropdown */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={onOpenInquiry}
+            className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap shadow-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+            <span className="hidden sm:inline">Inquiry</span>
+          </button>
+
           {isAuthenticated ? (
             <>
               <button

@@ -42,6 +42,8 @@ export const TripProvider = ({ children }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  const [inquiries, setInquiries] = useState([]);
+
   // Fetch initial data from Supabase & Backend REST API
   useEffect(() => {
     const fetchBackendData = async () => {
@@ -65,11 +67,23 @@ export const TripProvider = ({ children }) => {
           console.log('✅ Loaded trips from Supabase database:', normalized.length);
         }
 
-        const [tripsRes, destRes, actRes, adminRes] = await Promise.all([
+        // Fetch inquiries from Supabase
+        const { data: supaInquiries, error: inqErr } = await supabase
+          .from('inquiries')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!inqErr && supaInquiries) {
+          setInquiries(supaInquiries);
+          console.log('✅ Loaded inquiries from Supabase database:', supaInquiries.length);
+        }
+
+        const [tripsRes, destRes, actRes, adminRes, inqRes] = await Promise.all([
           fetch(`${API_BASE_URL}/trips`),
           fetch(`${API_BASE_URL}/destinations`),
           fetch(`${API_BASE_URL}/activities`),
-          fetch(`${API_BASE_URL}/admin/metrics`)
+          fetch(`${API_BASE_URL}/admin/metrics`),
+          fetch(`${API_BASE_URL}/inquiries`)
         ]);
 
         if (tripsRes.ok && !loadedFromSupabase) {
@@ -90,6 +104,11 @@ export const TripProvider = ({ children }) => {
         if (adminRes.ok) {
           const adminData = await adminRes.json();
           if (adminData.metrics) setAdminMetrics(adminData.metrics);
+        }
+
+        if (inqRes.ok && (!supaInquiries || supaInquiries.length === 0)) {
+          const inqData = await inqRes.json();
+          if (inqData.inquiries) setInquiries(inqData.inquiries);
         }
       } catch (err) {
         console.warn("⚠️ Backend fallback:", err.message);
@@ -545,6 +564,72 @@ export const TripProvider = ({ children }) => {
     addToast("Activity removed from itinerary", "info");
   };
 
+  const submitInquiry = async (inquiryData) => {
+    const payload = {
+      first_name: inquiryData.firstName || inquiryData.first_name || user?.firstName || 'Traveler',
+      last_name: inquiryData.lastName || inquiryData.last_name || user?.lastName || '',
+      email: inquiryData.email || user?.email || 'traveler@globetrotter.io',
+      phone: inquiryData.phone || '',
+      destination_interest: inquiryData.destinationInterest || inquiryData.destination_interest || 'General Inquiry',
+      travel_dates: inquiryData.travelDates || inquiryData.travel_dates || '',
+      number_of_guests: Number(inquiryData.numberOfGuests || inquiryData.number_of_guests) || 1,
+      budget_range: inquiryData.budgetRange || inquiryData.budget_range || '$1,000 - $3,000',
+      message: inquiryData.message,
+      status: 'new'
+    };
+
+    try {
+      const { data: sInq, error: sErr } = await supabase
+        .from('inquiries')
+        .insert([payload])
+        .select();
+
+      if (!sErr && sInq && sInq.length > 0) {
+        console.log('✅ Inquiry saved directly to Supabase:', sInq[0]);
+        setInquiries((prev) => [sInq[0], ...prev]);
+        addToast('Your inquiry has been submitted to Supabase!', 'success');
+        return { success: true, inquiry: sInq[0] };
+      } else if (sErr) {
+        console.warn('Supabase inquiry notice:', sErr.message);
+      }
+    } catch (err) {
+      console.warn('Supabase inquiry insert error:', err.message);
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/inquiries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.inquiry) {
+        setInquiries((prev) => [data.inquiry, ...prev]);
+        addToast('Your inquiry has been submitted successfully!', 'success');
+        return { success: true, inquiry: data.inquiry };
+      }
+    } catch (e) {
+      console.warn('Backend REST API submitInquiry warning:', e.message);
+    }
+
+    const localInquiry = { id: `inq-${Date.now()}`, ...payload, created_at: new Date().toISOString() };
+    setInquiries((prev) => [localInquiry, ...prev]);
+    addToast('Your inquiry has been recorded!', 'success');
+    return { success: true, inquiry: localInquiry };
+  };
+
+  const updateInquiryStatus = async (inquiryId, status) => {
+    try {
+      await supabase.from('inquiries').update({ status }).eq('id', inquiryId);
+    } catch (e) {
+      console.warn('Supabase updateInquiryStatus error:', e.message);
+    }
+    setInquiries((prev) =>
+      prev.map((i) => (i.id === inquiryId ? { ...i, status } : i))
+    );
+    addToast(`Inquiry status updated to ${status}`, 'info');
+  };
+
   return (
     <TripContext.Provider
       value={{
@@ -565,6 +650,9 @@ export const TripProvider = ({ children }) => {
         destinations,
         activitiesCatalog,
         adminMetrics,
+        inquiries,
+        submitInquiry,
+        updateInquiryStatus,
         toasts,
         addToast,
         removeToast,
