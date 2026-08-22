@@ -31,13 +31,13 @@ const MainContent = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [currentScreen]);
-
+//render screen function
   const renderScreen = () => {
     // Unauthenticated user attempting to open website or access protected screens gets redirected to AuthPage
     if (!isAuthenticated && currentScreen !== 'public-share') {
       return <AuthPage />;
     }
-
+// switch fucntion 
     switch (currentScreen) {
       case 'landing':
         return <LandingPage onOpenInquiry={() => setIsInquiryOpen(true)} />;
