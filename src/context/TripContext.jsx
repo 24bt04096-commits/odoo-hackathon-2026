@@ -6,10 +6,8 @@ const API_BASE_URL = 'http://localhost:5000/api';
 const TripContext = createContext();
 
 export const TripProvider = ({ children }) => {
-  // Authentication State (Persist session across reloads)
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return localStorage.getItem('globetrotter_auth') === 'true';
-  });
+  // Authentication State (Always default to false so app opens directly on Login Screen 1)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // User Profile
   const [user, setUser] = useState(() => {
@@ -17,11 +15,8 @@ export const TripProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : INITIAL_USER;
   });
 
-  // Current Screen (Default to dashboard if logged in, otherwise auth)
-  const [currentScreen, setCurrentScreen] = useState(() => {
-    const isAuth = localStorage.getItem('globetrotter_auth') === 'true';
-    return isAuth ? 'dashboard' : 'auth';
-  });
+  // Current Screen (Always default to 'auth' / Login Page)
+  const [currentScreen, setCurrentScreen] = useState('auth');
 
   // Trips & Catalog State
   const [trips, setTrips] = useState(INITIAL_TRIPS);

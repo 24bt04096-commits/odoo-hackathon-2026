@@ -21,29 +21,68 @@ export const CreateTripWizard = () => {
 
   // Form State matching Screen 4 wireframe
   const [tripTitle, setTripTitle] = useState('My Multi-City Escapade');
-  const [tripDescription, setTripDescription] = useState('A scenic multi-city getaway exploring historic landmarks, cultural spots, and local gastronomy.');
   const [selectedPlace, setSelectedPlace] = useState('dest-paris');
   const [startDate, setStartDate] = useState('2026-11-01');
   const [endDate, setEndDate] = useState('2026-11-10');
-  const [coverImage, setCoverImage] = useState('https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=1200&q=80');
   const [addedSuggestions, setAddedSuggestions] = useState(['act-paris-1', 'act-tokyo-1']);
 
-  // Preset cover photos gallery for quick selection
-  const presetCovers = [
-    { label: 'Paris Eiffel', url: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=600&q=80' },
-    { label: 'Tokyo Skyline', url: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80' },
-    { label: 'Rome Colosseum', url: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80' },
-    { label: 'Swiss Alps', url: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=600&q=80' },
-    { label: 'Tropical Beach', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80' },
-  ];
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCoverImage(imageUrl);
+  // Suggestions for Places to Visit / Activities to perform (6 items)
+  const suggestedPlacesAndActivities = [
+    {
+      id: 'act-paris-1',
+      title: 'Eiffel Tower Summit Tour & Champagne',
+      cityName: 'Paris',
+      category: 'Sightseeing',
+      cost: 45,
+      rating: 4.9,
+      image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+      id: 'act-paris-2',
+      title: 'Louvre Museum Masterpieces Guided Walk',
+      cityName: 'Paris',
+      category: 'Art & Culture',
+      cost: 35,
+      rating: 4.8,
+      image: 'https://images.unsplash.com/photo-1565099824688-e93eb20fe622?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+      id: 'act-tokyo-1',
+      title: 'Senso-ji Temple & Asakusa Street Food',
+      cityName: 'Tokyo',
+      category: 'Culture & Food',
+      cost: 25,
+      rating: 4.9,
+      image: 'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+      id: 'act-rome-1',
+      title: 'Colosseum & Ancient Forum Excursion',
+      cityName: 'Rome',
+      category: 'History',
+      cost: 50,
+      rating: 4.9,
+      image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+      id: 'act-tokyo-2',
+      title: 'Mount Fuji Scenic Peak & Lake Cruise',
+      cityName: 'Tokyo',
+      category: 'Nature & Adventure',
+      cost: 95,
+      rating: 4.95,
+      image: 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?auto=format&fit=crop&w=600&q=80'
+    },
+    {
+      id: 'act-kyoto-1',
+      title: 'Arashiyama Bamboo Grove & Sanctuary',
+      cityName: 'Kyoto',
+      category: 'Nature',
+      cost: 20,
+      rating: 4.85,
+      image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=600&q=80'
     }
-  };
+  ];
 
   const toggleSuggestion = (id) => {
     setAddedSuggestions((prev) => 
@@ -88,12 +127,12 @@ export const CreateTripWizard = () => {
 
     createTrip({
       title: tripTitle || `Trip to ${selectedDest.name}`,
-      subtitle: tripDescription || `Exploring ${selectedDest.name} and surrounding highlights`,
+      subtitle: `Exploring ${selectedDest.name} and surrounding highlights`,
       startDate,
       endDate,
       totalDays: 5,
       totalBudget: 2500,
-      coverImage: coverImage || selectedDest.heroImage,
+      coverImage: selectedDest.heroImage,
       cities: initialCities,
       itinerary: initialItinerary
     });
@@ -110,7 +149,7 @@ export const CreateTripWizard = () => {
         </div>
         <h1 className="text-3xl font-black text-slate-900 tracking-tight">Create a new Trip</h1>
         <p className="text-xs sm:text-sm text-slate-500">
-          Specify your trip title, travel dates, trip description, cover image, and select suggested places to visit.
+          Specify your trip title, target location, date range, and select suggested places to visit.
         </p>
       </div>
 
@@ -141,24 +180,10 @@ export const CreateTripWizard = () => {
             />
           </div>
 
-          {/* Trip Description */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Trip Description:
-            </label>
-            <textarea
-              rows={3}
-              value={tripDescription}
-              onChange={(e) => setTripDescription(e.target.value)}
-              placeholder="Provide a short description or travel goals for this trip..."
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all resize-none"
-            />
-          </div>
-
           {/* Select a Place : */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Select a Place / Destination:
+              Select a Place :
             </label>
             <div className="relative">
               <select
@@ -213,61 +238,11 @@ export const CreateTripWizard = () => {
 
           </div>
 
-          {/* Cover Photo Upload / Selection (Optional) */}
-          <div className="space-y-3 pt-2">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-              Cover Photo (Optional):
-            </label>
-            
-            {/* Preview Banner */}
-            <div className="relative h-36 rounded-2xl overflow-hidden border border-slate-200 group">
-              <img src={coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center text-white text-xs font-bold gap-2">
-                <span>Selected Cover Preview</span>
-              </div>
-            </div>
-
-            {/* Preset Image Options */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-xs font-bold text-slate-400 mr-1">Preset Options:</span>
-              {presetCovers.map((preset, idx) => (
-                <button
-                  type="button"
-                  key={idx}
-                  onClick={() => setCoverImage(preset.url)}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-xl border transition-all ${
-                    coverImage === preset.url
-                      ? 'bg-brand-600 text-white border-brand-600 shadow-sm'
-                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Upload File / Custom Image URL Input */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
-              <label className="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl border border-slate-300 cursor-pointer text-center transition-colors">
-                📁 Upload Custom Image File
-                <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-              </label>
-              <span className="text-xs font-semibold text-slate-400">or</span>
-              <input
-                type="url"
-                value={coverImage}
-                onChange={(e) => setCoverImage(e.target.value)}
-                placeholder="Paste Image URL..."
-                className="w-full flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-brand-500 focus:outline-none"
-              />
-            </div>
-          </div>
-
           {/* Form Submit Button */}
-          <div className="pt-4 flex justify-end">
+          <div className="pt-2 flex justify-end">
             <button
               type="submit"
-              className="w-full sm:w-auto bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold text-sm px-8 py-3.5 rounded-xl shadow-glow transition-all hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white font-extrabold text-sm px-8 py-3.5 rounded-xl shadow-glow transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
             >
               <span>Create Trip & Launch Builder</span>
               <ChevronRight className="w-4 h-4" />

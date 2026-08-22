@@ -30,9 +30,8 @@ const MainContent = () => {
   }, [currentScreen]);
 
   const renderScreen = () => {
-    // Publicly accessible pages without forced auth redirect
-    const publicScreens = ['landing', 'auth', 'create-trip', 'public-share'];
-    if (!isAuthenticated && !publicScreens.includes(currentScreen)) {
+    // Unauthenticated user attempting to open website or access protected screens gets redirected to AuthPage
+    if (!isAuthenticated && currentScreen !== 'public-share') {
       return <AuthPage />;
     }
 
@@ -68,11 +67,11 @@ const MainContent = () => {
       case 'admin':
         return <AdminDashboard />;
       default:
-        return isAuthenticated ? <DashboardPage /> : <LandingPage />;
+        return isAuthenticated ? <DashboardPage /> : <AuthPage />;
     }
   };
 
-  const isFullscreenAuth = currentScreen === 'auth';
+  const isFullscreenAuth = currentScreen === 'auth' || (!isAuthenticated && currentScreen !== 'landing' && currentScreen !== 'public-share');
 
   return (
     <div className="min-h-screen flex flex-col justify-between font-sans bg-slate-50 text-slate-900 selection:bg-brand-500 selection:text-white">
