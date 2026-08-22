@@ -225,9 +225,14 @@ export const TripProvider = ({ children }) => {
         });
 
         if (supaErr) {
-          if (supaErr.toLowerCase().includes('already registered') || supaErr.toLowerCase().includes('password')) {
-            return { success: false, error: supaErr };
+          console.error('❌ Supabase Signup Error:', supaErr);
+          if (supaErr.toLowerCase().includes('rate limit')) {
+            return {
+              success: false,
+              error: 'Supabase email rate limit reached. Please disable "Confirm Email" in Supabase Auth Settings to allow instant sign ups without email confirmation limits.'
+            };
           }
+          return { success: false, error: supaErr };
         } else if (supaData?.user) {
           supaUserObj = supaData.user;
           console.log('✅ Registered user in Supabase Auth:', supaData.user.email);
@@ -235,6 +240,7 @@ export const TripProvider = ({ children }) => {
       }
     } catch (sErr) {
       console.warn('Supabase signup notice:', sErr.message);
+      return { success: false, error: sErr.message };
     }
 
     const newUserObj = {
