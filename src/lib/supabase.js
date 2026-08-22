@@ -40,6 +40,21 @@ export const supabaseSignUp = async (email, password, metadata = {}) => {
   }
 };
 
+// Send Password Reset Email via Supabase Auth
+export const supabaseResetPassword = async (email) => {
+  try {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: window.location.origin,
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message || 'Failed to send password reset request.' };
+  }
+};
+
 // Sign out from Supabase Session
 export const supabaseSignOut = async () => {
   try {

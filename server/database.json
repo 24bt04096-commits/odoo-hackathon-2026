@@ -174,7 +174,7 @@
       "totalDays": 5,
       "coverImage": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80",
       "totalBudget": 2500,
-      "spentBudget": 0,
+      "spentBudget": 180,
       "currency": "USD",
       "travelers": [
         {
@@ -242,6 +242,15 @@
               "cost": 25,
               "location": "Paris",
               "notes": "Added from suggestions catalog"
+            },
+            {
+              "id": "act-1787389409907",
+              "time": "12:00",
+              "title": "Paragliding & Tandem Sky Flights",
+              "category": "Outdoor & Adventure",
+              "cost": 180,
+              "location": "Interlaken / Zermatt, Switzerland",
+              "notes": "Added from discovery catalog"
             }
           ]
         }

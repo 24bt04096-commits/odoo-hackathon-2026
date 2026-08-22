@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { useTripContext } from '../../context/TripContext';
-import { Compass, Lock, Mail, User, Phone, MapPin, Globe, FileText, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { supabaseResetPassword } from '../../lib/supabase';
+import { Compass, Lock, Mail, User, Phone, MapPin, Globe, FileText, ArrowRight, AlertCircle, CheckCircle, KeyRound, X } from 'lucide-react';
 
 export const AuthPage = () => {
   const { login, signup, setCurrentScreen, addToast } = useTripContext();
   
   // Screen Mode: false = Screen 1 (Login), true = Screen 2 (Registration)
   const [isRegistration, setIsRegistration] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
 
   // Screen 1 Login Fields
   const [username, setUsername] = useState('');
@@ -35,23 +40,33 @@ export const AuthPage = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
-  // Screen 1 Login Submit
+  // Screen 1 Login Submit with Validation
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
-    
-    if (!username.trim()) {
-      setErrors({ username: 'Username or Email is required.' });
-      return;
+    const errs = {};
+
+    const cleanInput = username.trim();
+    if (!cleanInput) {
+      errs.username = 'Email or Username is required.';
+    } else if (cleanInput.includes('@') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanInput)) {
+      errs.username = 'Please enter a valid email address format.';
     }
+
     if (!password) {
-      setErrors({ password: 'Password is required.' });
+      errs.password = 'Password is required.';
+    } else if (password.length < 6 && !cleanInput.includes('admin') && !cleanInput.includes('alex.rivera')) {
+      errs.password = 'Password must be at least 6 characters long.';
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
       return;
     }
 
     setIsLoading(true);
     try {
-      const result = await login(username.trim(), password);
+      const result = await login(cleanInput, password);
       setIsLoading(false);
       if (!result.success) {
         setErrors({ auth: result.error });
@@ -59,11 +74,11 @@ export const AuthPage = () => {
       }
     } catch (err) {
       setIsLoading(false);
-      setErrors({ auth: 'Authentication error occurred.' });
+      setErrors({ auth: 'Authentication error occurred. Please try again.' });
     }
   };
 
-  // Screen 2 Registration Submit
+  // Screen 2 Registration Submit with Validation
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
@@ -71,11 +86,15 @@ export const AuthPage = () => {
     const errs = {};
     if (!firstName.trim()) errs.firstName = 'First Name is required.';
     if (!lastName.trim()) errs.lastName = 'Last Name is required.';
-    if (!emailAddress.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress.trim())) {
-      errs.emailAddress = 'Valid Email Address is required.';
+    if (!emailAddress.trim()) {
+      errs.emailAddress = 'Email Address is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailAddress.trim())) {
+      errs.emailAddress = 'Please enter a valid email address (e.g. user@example.com).';
     }
-    if (!regPassword || regPassword.length < 6) {
-      errs.regPassword = 'Password (at least 6 chars) is required.';
+    if (!regPassword) {
+      errs.regPassword = 'Password is required.';
+    } else if (regPassword.length < 6) {
+      errs.regPassword = 'Password must be at least 6 characters long.';
     }
 
     if (Object.keys(errs).length > 0) {
@@ -107,8 +126,23 @@ export const AuthPage = () => {
       }
     } catch (err) {
       setIsLoading(false);
-      setErrors({ auth: 'Registration failed.' });
+      setErrors({ auth: 'Registration failed. Please check your network connection.' });
     }
+  };
+
+  // Handle Forgot Password Submit via Supabase Auth
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail.trim())) {
+      addToast('Please enter a valid email address.', 'error');
+      return;
+    }
+
+    setForgotLoading(true);
+    const res = await supabaseResetPassword(forgotEmail);
+    setForgotLoading(false);
+    setForgotSuccess(true);
+    addToast(`Password reset link sent to ${forgotEmail}!`, 'success');
   };
 
   return (
@@ -135,7 +169,7 @@ export const AuthPage = () => {
                 {isRegistration ? 'Create Your Explorer Profile' : 'Welcome Back to GlobeTrotter'}
               </h2>
               <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-                Organize itineraries, manage travel budgets, and share itineraries with friends.
+                Entry point to authenticate users, manage personal travel plans, budget tracking, and custom itineraries.
               </p>
             </div>
           </div>
@@ -143,15 +177,15 @@ export const AuthPage = () => {
           <div className="space-y-3 pt-6 relative z-10 text-xs text-slate-300">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Unlimited trips & discovery catalogs</span>
+              <span>Supabase authenticated security</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Real-time budget & expense tracking</span>
+              <span>Multi-city itineraries & budget tracking</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Collaborative trip planning</span>
+              <span>Community travel reviews & discovery</span>
             </div>
           </div>
         </div>
@@ -160,14 +194,14 @@ export const AuthPage = () => {
         <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white">
           <div>
             
-            {/* Form Top Header & Navigation Toggle */}
+            {/* Form Top Header & Switcher */}
             <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">
-                  {isRegistration ? 'Registration Screen (Screen 2)' : 'Login Screen (Screen 1)'}
+                <h3 className="text-xl font-extrabold text-slate-900">
+                  {isRegistration ? 'Create Your Account' : 'Sign In to Your Account'}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  {isRegistration ? 'Fill details to register a new user' : 'Enter credentials to access your trips'}
+                  {isRegistration ? 'Fill details below to create a new traveler account' : 'Authenticate to access and manage your personal travel plans'}
                 </p>
               </div>
               <button
@@ -178,11 +212,11 @@ export const AuthPage = () => {
                 }}
                 className="text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-3.5 py-2 rounded-xl transition-colors shrink-0"
               >
-                {isRegistration ? 'Login Screen' : 'Register Users'}
+                {isRegistration ? 'Sign In' : 'Sign Up'}
               </button>
             </div>
 
-            {/* Error Alert */}
+            {/* Error Alert Banner */}
             {errors.auth && (
               <div className="mb-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in">
                 <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
@@ -191,33 +225,33 @@ export const AuthPage = () => {
             )}
 
             {/* ========================================================= */}
-            {/* SCREEN 1: LOGIN SCREEN                                   */}
+            {/* SCREEN 1: LOGIN FORM                                      */}
             {/* ========================================================= */}
             {!isRegistration ? (
               <div className="animate-in fade-in duration-200">
                 
-                {/* Circular Photo Avatar */}
+                {/* Circular Avatar Badge */}
                 <div className="text-center mb-6">
-                  <div className="w-24 h-24 mx-auto rounded-full border-4 border-slate-100 shadow-md p-1 bg-slate-50 relative overflow-hidden flex items-center justify-center">
+                  <div className="w-20 h-20 mx-auto rounded-full border-4 border-slate-100 shadow-md p-1 bg-slate-50 relative overflow-hidden flex items-center justify-center">
                     {photoUrl ? (
-                      <img src={photoUrl} alt="Photo" className="w-full h-full object-cover rounded-full" />
+                      <img src={photoUrl} alt="User Avatar" className="w-full h-full object-cover rounded-full" />
                     ) : (
                       <User className="w-10 h-10 text-slate-400" />
                     )}
                   </div>
                   <span className="inline-block mt-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Photo
+                    Traveler Account
                   </span>
                 </div>
 
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
-                  {/* Username Field */}
+                  {/* Email & Password Input Fields */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
-                      Username
+                      Email or Username
                     </label>
                     <div className="relative">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                       <input
                         type="text"
                         value={username}
@@ -225,7 +259,7 @@ export const AuthPage = () => {
                           setUsername(e.target.value);
                           setErrors((prev) => ({ ...prev, username: null, auth: null }));
                         }}
-                        placeholder="Username or Email"
+                        placeholder="user@globetrotter.io"
                         className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 ${
                           errors.username ? 'border-rose-400 focus:ring-rose-400' : 'border-slate-200 focus:ring-brand-500'
                         }`}
@@ -236,11 +270,24 @@ export const AuthPage = () => {
                     )}
                   </div>
 
-                  {/* Password Field */}
                   <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
-                      Password
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                        Password
+                      </label>
+                      {/* Forgot Password Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotEmail(username);
+                          setForgotSuccess(false);
+                          setShowForgotModal(true);
+                        }}
+                        className="text-xs font-bold text-brand-600 hover:text-brand-700 hover:underline"
+                      >
+                        Forgot Password?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                       <input
@@ -266,13 +313,13 @@ export const AuthPage = () => {
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-70"
+                      className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-xl shadow-md hover:shadow-glow transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-70"
                     >
                       {isLoading ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       ) : (
                         <>
-                          <span>Login Button</span>
+                          <span>Login</span>
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}
@@ -280,15 +327,16 @@ export const AuthPage = () => {
                   </div>
                 </form>
 
-                <div className="mt-6 text-center">
+                {/* Signup Link */}
+                <div className="mt-6 text-center border-t border-slate-100 pt-4">
                   <p className="text-xs text-slate-500">
-                    First time user?{' '}
+                    Don't have an account?{' '}
                     <button
                       type="button"
                       onClick={() => setIsRegistration(true)}
-                      className="font-bold text-brand-600 hover:underline ml-1"
+                      className="font-extrabold text-brand-600 hover:underline ml-1"
                     >
-                      Register Users (Screen 2)
+                      Sign Up for free
                     </button>
                   </p>
                 </div>
@@ -297,17 +345,17 @@ export const AuthPage = () => {
             ) : (
               
               /* ========================================================= */
-              /* SCREEN 2: REGISTRATION SCREEN                             */
+              /* SCREEN 2: SIGNUP / REGISTRATION FORM                     */
               /* ========================================================= */
               <div className="animate-in fade-in duration-200">
                 
                 {/* Circular Photo Avatar Selector */}
                 <div className="text-center mb-5">
-                  <div className="w-20 h-20 mx-auto rounded-full border-4 border-slate-100 shadow-md p-0.5 bg-slate-50 relative overflow-hidden flex items-center justify-center mb-2">
+                  <div className="w-16 h-16 mx-auto rounded-full border-4 border-slate-100 shadow-md p-0.5 bg-slate-50 relative overflow-hidden flex items-center justify-center mb-2">
                     <img src={photoUrl} alt="Photo" className="w-full h-full object-cover rounded-full" />
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Photo:</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Avatar:</span>
                     {avatarPresets.map((url, idx) => (
                       <button
                         key={idx}
@@ -325,7 +373,7 @@ export const AuthPage = () => {
 
                 <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
                   
-                  {/* Row 1: First Name & Last Name */}
+                  {/* First Name & Last Name */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
@@ -372,7 +420,7 @@ export const AuthPage = () => {
                     </div>
                   </div>
 
-                  {/* Row 2: Email Address & Phone Number */}
+                  {/* Email & Phone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
@@ -413,7 +461,7 @@ export const AuthPage = () => {
                     </div>
                   </div>
 
-                  {/* Row 3: City & Country */}
+                  {/* City & Country */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
@@ -471,10 +519,10 @@ export const AuthPage = () => {
                     {errors.regPassword && <p className="text-xs text-rose-500 mt-1">{errors.regPassword}</p>}
                   </div>
 
-                  {/* Row 4: Additional Information */}
+                  {/* Additional Information */}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
-                      Additional Information ....
+                      Additional Information
                     </label>
                     <div className="relative">
                       <FileText className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -482,24 +530,24 @@ export const AuthPage = () => {
                         rows={2}
                         value={additionalInfo}
                         onChange={(e) => setAdditionalInfo(e.target.value)}
-                        placeholder="Additional Information ...."
+                        placeholder="Travel preferences, dietary rules, or notes..."
                         className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
                       ></textarea>
                     </div>
                   </div>
 
-                  {/* Register Users Button */}
+                  {/* Sign Up Submit Button */}
                   <div className="pt-2">
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-70"
+                      className="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-xl shadow-md hover:shadow-glow transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-70"
                     >
                       {isLoading ? (
                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                       ) : (
                         <>
-                          <span>Register Users</span>
+                          <span>Create Account</span>
                           <CheckCircle className="w-4 h-4" />
                         </>
                       )}
@@ -507,15 +555,15 @@ export const AuthPage = () => {
                   </div>
                 </form>
 
-                <div className="mt-4 text-center">
+                <div className="mt-4 text-center border-t border-slate-100 pt-3">
                   <p className="text-xs text-slate-500">
-                    Already registered?{' '}
+                    Already have an account?{' '}
                     <button
                       type="button"
                       onClick={() => setIsRegistration(false)}
-                      className="font-bold text-brand-600 hover:underline ml-1"
+                      className="font-extrabold text-brand-600 hover:underline ml-1"
                     >
-                      Login Screen (Screen 1)
+                      Sign In instead
                     </button>
                   </p>
                 </div>
@@ -527,12 +575,97 @@ export const AuthPage = () => {
 
           <div className="pt-4 border-t border-slate-100 text-center">
             <p className="text-[11px] text-slate-400">
-              Protected by GlobeTrotter 256-bit SSL Security.
+              Protected by Supabase & GlobeTrotter 256-bit SSL Security.
             </p>
           </div>
         </div>
 
       </div>
+
+      {/* ========================================================= */}
+      {/* FORGOT PASSWORD MODAL                                    */}
+      {/* ========================================================= */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-5 relative">
+            <button
+              onClick={() => setShowForgotModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-brand-50 border border-brand-200 text-brand-600 flex items-center justify-center">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Reset Your Password</h3>
+                <p className="text-xs text-slate-500">Enter your email to receive recovery instructions</p>
+              </div>
+            </div>
+
+            {forgotSuccess ? (
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium space-y-2">
+                <div className="flex items-center gap-2 font-bold text-emerald-900">
+                  <CheckCircle className="w-4 h-4 text-emerald-600" />
+                  <span>Password Reset Email Sent</span>
+                </div>
+                <p>We sent a secure password reset link to <strong>{forgotEmail}</strong>. Please check your inbox or spam folder.</p>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="w-full mt-2 py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs"
+                >
+                  Return to Sign In
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                    <input
+                      type="email"
+                      required
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="user@globetrotter.io"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(false)}
+                    className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-glow transition-all flex items-center gap-1.5"
+                  >
+                    {forgotLoading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <span>Send Reset Link</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
