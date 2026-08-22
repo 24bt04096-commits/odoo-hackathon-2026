@@ -233,6 +233,36 @@ export const db = {
     return trip;
   },
 
+  // Inquiry Operations
+  createInquiry: (inquiryData) => {
+    const data = readDb();
+    if (!data.inquiries) data.inquiries = [];
+
+    const newInquiry = {
+      id: `inq-${Date.now()}`,
+      firstName: inquiryData.firstName || inquiryData.first_name || 'Traveler',
+      lastName: inquiryData.lastName || inquiryData.last_name || '',
+      email: inquiryData.email,
+      phone: inquiryData.phone || '',
+      destinationInterest: inquiryData.destinationInterest || inquiryData.destination_interest || 'General Inquiry',
+      travelDates: inquiryData.travelDates || inquiryData.travel_dates || '',
+      numberOfGuests: Number(inquiryData.numberOfGuests || inquiryData.number_of_guests) || 1,
+      budgetRange: inquiryData.budgetRange || inquiryData.budget_range || '$1,000 - $3,000',
+      message: inquiryData.message,
+      status: 'new',
+      createdAt: new Date().toISOString()
+    };
+
+    data.inquiries.unshift(newInquiry);
+    writeDb(data);
+    return newInquiry;
+  },
+
+  getInquiries: () => {
+    const data = readDb();
+    return data.inquiries || [];
+  },
+
   // Discovery Catalogs & Admin Metrics
   getDestinations: () => readDb().destinations,
   getActivitiesCatalog: () => readDb().activitiesCatalog,

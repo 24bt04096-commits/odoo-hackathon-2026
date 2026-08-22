@@ -131,6 +131,30 @@ app.get('/api/admin/metrics', (req, res) => {
   res.json({ success: true, metrics: db.getAdminMetrics() });
 });
 
+// Inquiry Form Submissions Endpoints
+app.get('/api/inquiries', (req, res) => {
+  try {
+    const inquiries = db.getInquiries();
+    res.json({ success: true, inquiries });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/inquiries', (req, res) => {
+  const { email, message } = req.body;
+  if (!email || !message) {
+    return res.status(400).json({ success: false, error: 'Email and message are required fields' });
+  }
+
+  try {
+    const newInquiry = db.createInquiry(req.body);
+    res.json({ success: true, inquiry: newInquiry, message: 'Inquiry submitted successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 GlobeTrotter Database REST API running at http://localhost:${PORT}`);
 });
