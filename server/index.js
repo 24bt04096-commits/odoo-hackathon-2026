@@ -131,9 +131,24 @@ app.get('/api/admin/metrics', (req, res) => {
   res.json({ success: true, metrics: db.getAdminMetrics() });
 });
 
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://xzryhazxwabzkpajabam.supabase.co';
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_ZgkbrSk4Vcs7BquS9M-v5g_JvcEiJK7';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
 // Inquiry Form Submissions Endpoints
-app.get('/api/inquiries', (req, res) => {
+app.get('/api/inquiries', async (req, res) => {
   try {
+    const { data: supaInquiries, error: supaErr } = await supabase
+      .from('inquiries')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!supaErr && supaInquiries) {
+      return res.json({ success: true, inquiries: supaInquiries });
+    }
+
     const inquiries = db.getInquiries();
     res.json({ success: true, inquiries });
   } catch (err) {
@@ -141,7 +156,7 @@ app.get('/api/inquiries', (req, res) => {
   }
 });
 
-app.post('/api/inquiries', (req, res) => {
+app.post('/api/inquiries', async (req, res) => {
   const { email, message } = req.body;
   if (!email || !message) {
     return res.status(400).json({ success: false, error: 'Email and message are required fields' });
@@ -149,6 +164,27 @@ app.post('/api/inquiries', (req, res) => {
 
   try {
     const newInquiry = db.createInquiry(req.body);
+
+    // Save to Supabase public.inquiries table
+    try {
+      const payload = {
+        first_name: req.body.firstName || req.body.first_name || 'Traveler',
+        last_name: req.body.lastName || req.body.last_name || '',
+        email: email,
+        phone: req.body.phone || '',
+        destination_interest: req.body.destinationInterest || req.body.destination_interest || 'General Inquiry',
+        travel_dates: req.body.travelDates || req.body.travel_dates || '',
+        number_of_guests: Number(req.body.numberOfGuests || req.body.number_of_guests) || 1,
+        budget_range: req.body.budgetRange || req.body.budget_range || '$1,000 - $3,000',
+        message: message,
+        status: 'new'
+      };
+      await supabase.from('inquiries').insert([payload]);
+      console.log('✅ Inquiry saved to Supabase public.inquiries table!');
+    } catch (supaErr) {
+      console.warn('Supabase inquiry insert notice:', supaErr.message);
+    }
+
     res.json({ success: true, inquiry: newInquiry, message: 'Inquiry submitted successfully!' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
