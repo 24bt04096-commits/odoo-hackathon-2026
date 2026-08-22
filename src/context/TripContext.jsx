@@ -98,7 +98,7 @@ export const TripProvider = ({ children }) => {
 
   // Auth API Handlers (Integrated with Supabase Backend & Fallbacks)
   const login = async (email, password) => {
-    // 1. Attempt direct Supabase Email & Password Auth
+    // 1. Primary Supabase Email & Password Authentication
     try {
       const { data: supaData, error: supaErr } = await supabaseSignIn(email, password);
       if (supaData && supaData.user) {
@@ -118,23 +118,36 @@ export const TripProvider = ({ children }) => {
         setUser(supaUser);
         setIsAuthenticated(true);
         localStorage.setItem('globetrotter_auth', 'true');
-        addToast(`Welcome back via Supabase, ${supaUser.name}!`, 'success');
+        addToast(`Welcome back, ${supaUser.name}!`, 'success');
         setCurrentScreen(supaUser.role === 'Admin' ? 'admin' : 'dashboard');
         return { success: true, user: supaUser };
       }
 
-      // If Supabase returned a clear error message and not a demo account, surface error
-      if (supaErr && !email.includes('alex.rivera') && !email.includes('admin')) {
-        const savedUsers = JSON.parse(localStorage.getItem('globetrotter_registered_users') || '[]');
-        const foundLocal = savedUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
-        if (!foundLocal) {
-          return { success: false, error: supaErr };
+      // If Supabase returned an explicit authentication error (e.g. deleted user or wrong password), reject login!
+      if (supaErr) {
+        const lowerErr = supaErr.toLowerCase();
+        if (
+          lowerErr.includes('invalid login credentials') ||
+          lowerErr.includes('user not found') ||
+          lowerErr.includes('email not confirmed') ||
+          lowerErr.includes('invalid_credentials')
+        ) {
+          // Clean up any stale local storage registration for deleted accounts
+          const savedUsers = JSON.parse(localStorage.getItem('globetrotter_registered_users') || '[]');
+          const filtered = savedUsers.filter((u) => u.email.toLowerCase() !== email.toLowerCase());
+          localStorage.setItem('globetrotter_registered_users', JSON.stringify(filtered));
+
+          return {
+            success: false,
+            error: 'Invalid email or password. If you deleted this account from Supabase, please sign up again.'
+          };
         }
       }
     } catch (err) {
       console.log('Supabase auth notice:', err.message);
     }
 
+    // 2. Secondary REST API backend fallback (only if Supabase is offline/unreachable)
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -144,7 +157,7 @@ export const TripProvider = ({ children }) => {
       const data = await res.json();
       
       if (!data.success || !data.user) {
-        return { success: false, error: data.error || 'Authentication failed' };
+        return { success: false, error: data.error || 'Invalid credentials' };
       }
 
       setUser(data.user);
@@ -154,42 +167,32 @@ export const TripProvider = ({ children }) => {
       setCurrentScreen(data.user.role === 'Admin' ? 'admin' : 'dashboard');
       return { success: true, user: data.user };
     } catch (e) {
-      console.warn("⚠️ Authentication server offline. Validating via local storage fallback.");
-      const savedUsers = JSON.parse(localStorage.getItem('globetrotter_registered_users') || '[]');
-      const found = savedUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
-
-      if (found) {
-        if (found.password !== password && password !== 'password123') {
-          return { success: false, error: 'Incorrect password. Please try again.' };
-        }
-        const { password: _, ...cleanUser } = found;
-        setUser(cleanUser);
+      // 3. Demo Admin fallback for local dev testing (only for alex.rivera@globetrotter.io)
+      if (email === 'alex.rivera@globetrotter.io' || email === 'admin@globetrotter.io') {
+        const demoAdmin = {
+          id: 'admin-alex',
+          name: 'Alex Rivera',
+          email: email,
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+          role: 'Admin',
+          memberSince: '2024',
+          homeCity: 'San Francisco, CA',
+          currency: 'USD',
+          travelStyle: ['Cultural Explorer'],
+          stats: { countriesVisited: 12, tripsCompleted: 8, savedPlaces: 40 }
+        };
+        setUser(demoAdmin);
         setIsAuthenticated(true);
         localStorage.setItem('globetrotter_auth', 'true');
-        addToast(`Welcome back, ${cleanUser.name}!`, 'success');
-        setCurrentScreen(cleanUser.role === 'Admin' ? 'admin' : 'dashboard');
-        return { success: true, user: cleanUser };
+        addToast(`Welcome back, ${demoAdmin.name}!`, 'info');
+        setCurrentScreen('admin');
+        return { success: true, user: demoAdmin };
       }
 
-      // Default fallback for demo accounts
-      const fallbackUser = {
-        name: email.split('@')[0]?.replace('.', ' ') || 'Traveler',
-        email: email,
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-        role: email.includes('admin') ? 'Admin' : 'Traveler',
-        memberSince: '2024',
-        homeCity: 'San Francisco, CA',
-        currency: 'USD',
-        travelStyle: ['Cultural Explorer'],
-        stats: { countriesVisited: 12, tripsCompleted: 8, savedPlaces: 40 }
+      return {
+        success: false,
+        error: 'Invalid login credentials. User does not exist or has been deleted.'
       };
-
-      setUser(fallbackUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('globetrotter_auth', 'true');
-      addToast(`Welcome back, ${fallbackUser.name}!`, 'info');
-      setCurrentScreen(fallbackUser.role === 'Admin' ? 'admin' : 'dashboard');
-      return { success: true, user: fallbackUser };
     }
   };
 
