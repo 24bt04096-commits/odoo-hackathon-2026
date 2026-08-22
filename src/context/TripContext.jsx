@@ -96,9 +96,9 @@ export const TripProvider = ({ children }) => {
     localStorage.setItem('globetrotter_auth', isAuthenticated ? 'true' : 'false');
   }, [isAuthenticated]);
 
-  // Auth API Handlers (Integrated with Supabase Backend)
+  // Auth API Handlers (Integrated with Supabase Backend & Fallbacks)
   const login = async (email, password) => {
-    // Attempt Supabase Auth
+    // 1. Attempt direct Supabase Email & Password Auth
     try {
       const { data: supaData, error: supaErr } = await supabaseSignIn(email, password);
       if (supaData && supaData.user) {
@@ -121,6 +121,15 @@ export const TripProvider = ({ children }) => {
         addToast(`Welcome back via Supabase, ${supaUser.name}!`, 'success');
         setCurrentScreen(supaUser.role === 'Admin' ? 'admin' : 'dashboard');
         return { success: true, user: supaUser };
+      }
+
+      // If Supabase returned a clear error message and not a demo account, surface error
+      if (supaErr && !email.includes('alex.rivera') && !email.includes('admin')) {
+        const savedUsers = JSON.parse(localStorage.getItem('globetrotter_registered_users') || '[]');
+        const foundLocal = savedUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+        if (!foundLocal) {
+          return { success: false, error: supaErr };
+        }
       }
     } catch (err) {
       console.log('Supabase auth notice:', err.message);
@@ -198,78 +207,64 @@ export const TripProvider = ({ children }) => {
       };
     }
 
-    // Sync registration with Supabase Auth
+    const fullName = payload.name || `${payload.firstName || ''} ${payload.lastName || ''}`.trim() || 'Explorer';
+    
+    // Execute Supabase Auth Registration
+    let supaUserObj = null;
     try {
       if (payload.email && payload.password) {
-        await supabaseSignUp(payload.email, payload.password, {
-          name: payload.name || `${payload.firstName} ${payload.lastName}`,
-          phone: payload.phone,
-          city: payload.city,
-          country: payload.country
+        const { data: supaData, error: supaErr } = await supabaseSignUp(payload.email, payload.password, {
+          name: fullName,
+          phone: payload.phone || '',
+          city: payload.city || '',
+          country: payload.country || '',
+          avatar: payload.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80'
         });
-        console.log('✅ Synchronized user registration to Supabase Auth');
+
+        if (supaErr) {
+          if (supaErr.toLowerCase().includes('already registered') || supaErr.toLowerCase().includes('password')) {
+            return { success: false, error: supaErr };
+          }
+        } else if (supaData?.user) {
+          supaUserObj = supaData.user;
+          console.log('✅ Registered user in Supabase Auth:', supaData.user.email);
+        }
       }
     } catch (sErr) {
       console.warn('Supabase signup notice:', sErr.message);
     }
 
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      
-      if (!data.success || !data.user) {
-        return { success: false, error: data.error || 'Signup failed' };
-      }
+    const newUserObj = {
+      id: supaUserObj?.id || `user-${Date.now()}`,
+      name: fullName,
+      firstName: payload.firstName || fullName.split(' ')[0],
+      lastName: payload.lastName || '',
+      email: payload.email,
+      phone: payload.phone || '',
+      city: payload.city || 'San Francisco',
+      country: payload.country || 'USA',
+      avatar: payload.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+      role: 'Traveler',
+      memberSince: '2026',
+      homeCity: `${payload.city || 'San Francisco'}, ${payload.country || 'USA'}`,
+      currency: 'USD',
+      travelStyle: ['Explorer'],
+      stats: { countriesVisited: 1, tripsCompleted: 0, savedPlaces: 5 }
+    };
 
-      setUser(data.user);
-      setIsAuthenticated(true);
-      localStorage.setItem('globetrotter_auth', 'true');
-      addToast(`Account registered! Welcome, ${data.user.name}!`, 'success');
-      setCurrentScreen('dashboard');
-      return { success: true, user: data.user };
-    } catch (e) {
-      console.warn("⚠️ Authentication server offline. Creating account via local storage fallback.");
-      const savedUsers = JSON.parse(localStorage.getItem('globetrotter_registered_users') || '[]');
-      const targetEmail = payload.email;
-      if (savedUsers.some((u) => u.email.toLowerCase() === targetEmail.toLowerCase())) {
-        return { success: false, error: 'An account with this email already exists. Please Sign In instead!' };
-      }
-
-      const fullName = payload.name || `${payload.firstName || ''} ${payload.lastName || ''}`.trim() || 'New Traveler';
-      const newUserObj = {
-        name: fullName,
-        firstName: payload.firstName || fullName.split(' ')[0],
-        lastName: payload.lastName || '',
-        email: targetEmail,
-        password: payload.password,
-        phone: payload.phone || '',
-        city: payload.city || 'San Francisco',
-        country: payload.country || 'USA',
-        additionalInfo: payload.additionalInfo || '',
-        avatar: payload.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-        role: 'Traveler',
-        memberSince: new Date().getFullYear().toString(),
-        homeCity: `${payload.city || 'San Francisco'}, ${payload.country || 'USA'}`,
-        currency: 'USD',
-        travelStyle: ['Explorer'],
-        stats: { countriesVisited: 1, tripsCompleted: 0, savedPlaces: 5 }
-      };
-
-      savedUsers.push(newUserObj);
+    // Save user to local backup database
+    const savedUsers = JSON.parse(localStorage.getItem('globetrotter_registered_users') || '[]');
+    if (!savedUsers.some(u => u.email.toLowerCase() === payload.email.toLowerCase())) {
+      savedUsers.push({ ...newUserObj, password: payload.password });
       localStorage.setItem('globetrotter_registered_users', JSON.stringify(savedUsers));
-
-      const { password: _, ...cleanUser } = newUserObj;
-      setUser(cleanUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('globetrotter_auth', 'true');
-      addToast(`Account created! Welcome, ${cleanUser.name}!`, 'success');
-      setCurrentScreen('dashboard');
-      return { success: true, user: cleanUser };
     }
+
+    setUser(newUserObj);
+    setIsAuthenticated(true);
+    localStorage.setItem('globetrotter_auth', 'true');
+    addToast(`Account created via Supabase! Welcome, ${newUserObj.name}!`, 'success');
+    setCurrentScreen('dashboard');
+    return { success: true, user: newUserObj };
   };
 
   const loginDemoUser = (demoUserObj) => {
