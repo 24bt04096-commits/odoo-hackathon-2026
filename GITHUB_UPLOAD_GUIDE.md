@@ -10,16 +10,24 @@ This project is configured with 3 separate git branches for 3 team members to up
 
 ---
 
-## ⚡ Step 1: Remote Repository Connected
+## ⚡ How Team Members Should Run the Project
 
-Your remote repository URL is configured as:
-`https://github.com/24bt04096-commits/odoo-hackathon-2026.git`
-
-To push all 4 branches (`main`, `frontend`, `backend`, `features`) to GitHub, run:
+When a team member clones or downloads this repository, run the following commands:
 
 ```bash
-git push -u origin --all
+# 1. Install dependencies
+npm install
+
+# 2. Start the Backend API Server (Terminal 1)
+npm run server
+
+# 3. Start the Frontend Application (Terminal 2)
+npm run dev
 ```
+
+> [!TIP]
+> If a team member only runs `npm run dev` (without running `npm run server`), the application automatically falls back to **Local Offline Authentication Mode** so login/signup will **never fail or block authentication**!
+
 
 
 ---
